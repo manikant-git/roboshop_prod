@@ -1,9 +1,6 @@
 services:
   catalogue:
-    build:
-      context: ./catalogue
-      dockerfile: Dockerfile
-    image: catalogue:latest
+    image: joindevops/catalogue:2.0.0
     container_name: catalogue
     restart: unless-stopped
     environment:
@@ -12,10 +9,7 @@ services:
       - mongodb
 
   user:
-    build:
-      context: ./user
-      dockerfile: Dockerfile
-    image: user:latest
+    image: joindevops/user:2.0.0
     container_name: user
     restart: unless-stopped
     environment:
@@ -30,10 +24,7 @@ services:
       - redis
 
   cart:
-    build:
-      context: ./cart
-      dockerfile: Dockerfile
-    image: cart:latest
+    image: joindevops/cart:2.0.0
     container_name: cart
     restart: unless-stopped
     environment:
@@ -45,10 +36,7 @@ services:
       - catalogue
 
   shipping:
-    build:
-      context: ./shipping
-      dockerfile: Dockerfile
-    image: shipping:latest
+    image: joindevops/shipping:2.0.0
     container_name: shipping
     restart: unless-stopped
     environment:
@@ -59,10 +47,7 @@ services:
       - cart
 
   payment:
-    build:
-      context: ./payment
-      dockerfile: Dockerfile
-    image: payment:latest
+    image: joindevops/payment:2.0.0
     container_name: payment
     restart: unless-stopped
     environment:
@@ -79,10 +64,7 @@ services:
       - user
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: frontend:latest
+    image: joindevops/frontend:2.0.0
     container_name: frontend
     restart: unless-stopped
     ports:
@@ -95,20 +77,14 @@ services:
       - payment
 
   mongodb:
-    build:
-      context: ./mongodb
-      dockerfile: Dockerfile
-    image: mongodb:latest
+    image: joindevops/mongodb:2.0.0
     container_name: mongodb
     restart: unless-stopped
     volumes:
       - mongodb:/data/db
 
   mysql:
-    build:
-      context: ./mysql
-      dockerfile: Dockerfile
-    image: mysql:latest
+    image: joindevops/mysql:2.0.0
     container_name: mysql
     restart: unless-stopped
     environment:
