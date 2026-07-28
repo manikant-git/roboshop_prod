@@ -43,6 +43,7 @@ const logger = pino({
 const httpLogger = pinoHttp({ logger });
 
 const app = express();
+const router = express.Router();
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1));
 app.disable('x-powered-by');
 
@@ -157,7 +158,7 @@ app.get('/health', (req, res) => {
 });
 
 // use REDIS INCR to track anonymous users
-app.get('/uniqueid', async (req, res) => {
+router.get('/uniqueid', async (req, res) => {
     try {
         const r = await redisClient.incr('anonymous-counter');
         res.json({ uuid: 'anonymous-' + r });
@@ -168,7 +169,7 @@ app.get('/uniqueid', async (req, res) => {
 });
 
 // check user exists - used server side by the payment service
-app.get('/check/:id', dbReady, async (req, res) => {
+router.get('/check/:id', dbReady, async (req, res) => {
     try {
         const user = await usersCollection.findOne({ name: req.params.id });
         if (user) {
@@ -183,7 +184,7 @@ app.get('/check/:id', dbReady, async (req, res) => {
 });
 
 // availability checks used by the register form
-app.get('/available/username/:name', dbReady, async (req, res) => {
+router.get('/available/username/:name', dbReady, async (req, res) => {
     try {
         const exists = await usersCollection.findOne({ name: req.params.name });
         res.json({ available: !exists });
@@ -193,7 +194,7 @@ app.get('/available/username/:name', dbReady, async (req, res) => {
     }
 });
 
-app.get('/available/email/:email', dbReady, async (req, res) => {
+router.get('/available/email/:email', dbReady, async (req, res) => {
     try {
         const exists = await usersCollection.findOne({ email: String(req.params.email).toLowerCase() });
         res.json({ available: !exists });
@@ -203,7 +204,7 @@ app.get('/available/email/:email', dbReady, async (req, res) => {
     }
 });
 
-app.post('/register', authLimiter, dbReady, async (req, res) => {
+router.post('/register', authLimiter, dbReady, async (req, res) => {
     const { data, errors } = auth.validateRegistration(req.body || {});
     if (errors.length) {
         return res.status(400).json({ error: errors[0], errors });
@@ -248,7 +249,7 @@ app.post('/register', authLimiter, dbReady, async (req, res) => {
     }
 });
 
-app.post('/login', authLimiter, dbReady, async (req, res) => {
+router.post('/login', authLimiter, dbReady, async (req, res) => {
     const { data, errors } = auth.validateLogin(req.body || {});
     if (errors.length) {
         return res.status(400).json({ error: errors[0], errors });
@@ -293,7 +294,7 @@ app.post('/login', authLimiter, dbReady, async (req, res) => {
     }
 });
 
-app.post('/refresh', dbReady, async (req, res) => {
+router.post('/refresh', dbReady, async (req, res) => {
     const token = (req.body && req.body.refreshToken) || '';
     if (!token) {
         return res.status(400).json({ error: 'refresh token required' });
@@ -320,7 +321,7 @@ app.post('/refresh', dbReady, async (req, res) => {
     }
 });
 
-app.post('/logout', authenticate, async (req, res) => {
+router.post('/logout', authenticate, async (req, res) => {
     await denylistToken(req.auth.jti, req.auth.exp);
     res.json({ status: 'logged out' });
 });
@@ -329,7 +330,7 @@ app.post('/logout', authenticate, async (req, res) => {
  * reset token is returned to the caller; wire it into your mail provider by
  * consuming the same value server side. The token itself is never stored -
  * only its SHA-256 hash, with a hard expiry. */
-app.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
+router.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
     const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     if (!auth.EMAIL_RE.test(email)) {
         return res.status(400).json({ error: 'a valid email is required' });
@@ -358,7 +359,7 @@ app.post('/forgot-password', authLimiter, dbReady, async (req, res) => {
     }
 });
 
-app.post('/reset-password', authLimiter, dbReady, async (req, res) => {
+router.post('/reset-password', authLimiter, dbReady, async (req, res) => {
     const token = String((req.body && req.body.token) || '').trim();
     const password = (req.body && req.body.password) || '';
     if (!token) {
@@ -394,7 +395,7 @@ app.post('/reset-password', authLimiter, dbReady, async (req, res) => {
  * Protected endpoints
  * ------------------------------------------------------------------ */
 
-app.get('/me', authenticate, dbReady, async (req, res) => {
+router.get('/me', authenticate, dbReady, async (req, res) => {
     try {
         const user = await usersCollection.findOne({ name: req.auth.name });
         if (!user) {
@@ -407,7 +408,7 @@ app.get('/me', authenticate, dbReady, async (req, res) => {
     }
 });
 
-app.put('/me', authenticate, dbReady, async (req, res) => {
+router.put('/me', authenticate, dbReady, async (req, res) => {
     const body = req.body || {};
     const update = {};
     if (typeof body.firstName === 'string' && body.firstName.trim()) update.firstName = body.firstName.trim();
@@ -427,7 +428,7 @@ app.put('/me', authenticate, dbReady, async (req, res) => {
     }
 });
 
-app.post('/change-password', authenticate, dbReady, async (req, res) => {
+router.post('/change-password', authenticate, dbReady, async (req, res) => {
     const current = (req.body && req.body.currentPassword) || '';
     const next = (req.body && req.body.newPassword) || '';
     const problems = auth.passwordProblems(next);
@@ -458,7 +459,7 @@ app.post('/change-password', authenticate, dbReady, async (req, res) => {
 });
 
 // order history of the authenticated user
-app.get('/orders', authenticate, dbReady, async (req, res) => {
+router.get('/orders', authenticate, dbReady, async (req, res) => {
     try {
         const history = await ordersCollection.findOne({ name: req.auth.name });
         return res.json({ history: (history && history.history) || [] });
@@ -469,7 +470,7 @@ app.get('/orders', authenticate, dbReady, async (req, res) => {
 });
 
 // admin only - full user listing
-app.get('/users', authenticate, auth.requireRole('admin'), dbReady, async (req, res) => {
+router.get('/users', authenticate, auth.requireRole('admin'), dbReady, async (req, res) => {
     try {
         const users = await usersCollection.find({}).toArray();
         return res.json(users.map(auth.publicUser));
@@ -483,7 +484,7 @@ app.get('/users', authenticate, auth.requireRole('admin'), dbReady, async (req, 
  * Service-to-service endpoints (called by the payment service)
  * ------------------------------------------------------------------ */
 
-app.post('/order/:id', dbReady, async (req, res) => {
+router.post('/order/:id', dbReady, async (req, res) => {
     try {
         const user = await usersCollection.findOne({ name: req.params.id });
         if (!user) {
@@ -502,7 +503,7 @@ app.post('/order/:id', dbReady, async (req, res) => {
     }
 });
 
-app.get('/history/:id', authenticate, auth.requireSelfOrAdmin('id'), dbReady, async (req, res) => {
+router.get('/history/:id', authenticate, auth.requireSelfOrAdmin('id'), dbReady, async (req, res) => {
     try {
         const history = await ordersCollection.findOne({ name: req.params.id });
         if (history) {
@@ -514,6 +515,10 @@ app.get('/history/:id', authenticate, auth.requireSelfOrAdmin('id'), dbReady, as
         return res.status(500).json({ error: 'internal error' });
     }
 });
+
+// Register user-service routes
+app.use(router);
+app.use('/api/user', router);
 
 // JSON 404 + error handler so clients never receive an HTML error body
 app.use((req, res) => res.status(404).json({ error: 'not found' }));
