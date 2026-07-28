@@ -1,0 +1,53 @@
+<!-- payment -->
+<div class="card">
+    <div class="steps">
+        <span class="step"><i class="ti ti-shopping-cart"></i> Cart</span>
+        <span>&rsaquo;</span>
+        <span class="step"><i class="ti ti-truck-delivery"></i> Shipping</span>
+        <span>&rsaquo;</span>
+        <span class="step active"><i class="ti ti-credit-card"></i> Payment</span>
+    </div>
+    <h2><i class="ti ti-receipt"></i> Review your order</h2>
+
+    <div class="table-wrap" ng-if="data.cart.total != 0">
+        <table>
+            <tr>
+                <th>Qty</th>
+                <th>Item</th>
+                <th class="currency">Sub total</th>
+            </tr>
+            <tr ng-repeat="item in data.cart.items">
+                <td>{{ item.qty }}</td>
+                <td>{{ item.name }}</td>
+                <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="2">Inc tax</td>
+                <td class="currency">&euro;{{ data.cart.tax.toFixed(2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>Total</strong></td>
+                <td class="currency">&euro;{{ data.cart.total.toFixed(2) }}</td>
+            </tr>
+        </table>
+        <div class="form-foot" style="margin-top:16px">
+            <span class="hint"><i class="ti ti-lock"></i> This demo does not take real payments.</span>
+            <button type="button" ng-disabled="data.buttonDisabled" ng-click="pay();">
+                <span class="spinner-sm" ng-if="data.buttonDisabled && !data.cont"></span>
+                <i class="ti ti-credit-card" ng-if="!data.buttonDisabled"></i> Pay now
+            </button>
+        </div>
+    </div>
+
+    <div class="empty-state" ng-if="data.cart.total == 0 && !data.cont">
+        <i class="ti ti-shopping-cart-off"></i>
+        There is nothing to pay for yet.
+        <div style="margin-top:14px"><a class="btn" href="/products"><i class="ti ti-robot"></i> Browse products</a></div>
+    </div>
+
+    <div class="card" ng-if="data.cont" style="background:var(--surface-2);margin-top:18px">
+        <h3><i class="ti ti-circle-check" style="color:var(--success)"></i> Thank you for your order</h3>
+        <p class="hint">{{ data.message }}</p>
+        <a class="btn" href="/products"><i class="ti ti-arrow-right"></i> Continue shopping</a>
+    </div>
+</div>

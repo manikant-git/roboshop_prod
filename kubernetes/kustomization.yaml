@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: roboshop
+
+commonLabels:
+  app.kubernetes.io/part-of: roboshop
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - 00-namespace.yaml
+  - 01-config.yaml
+  - 10-datastores.yaml
+  - 20-microservices.yaml
+  - 25-frontend.yaml
+  - 30-ingress.yaml
+  - 40-hpa-pdb.yaml
+  - 50-networkpolicy.yaml
+
+images:
+  - name: joindevops/catalogue
+    newTag: 2.0.0
+  - name: joindevops/user
+    newTag: 2.0.0
+  - name: joindevops/cart
+    newTag: 2.0.0
+  - name: joindevops/shipping
+    newTag: 2.0.0
+  - name: joindevops/payment
+    newTag: 2.0.0
+  - name: joindevops/frontend
+    newTag: 2.0.0
+  - name: joindevops/mongodb
+    newTag: 2.0.0
+  - name: joindevops/mysql
+    newTag: 2.0.0

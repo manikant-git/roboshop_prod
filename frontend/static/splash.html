@@ -1,0 +1,41 @@
+<!-- home / splash page -->
+<div class="hero">
+    <div>
+        <span class="badge"><i class="ti ti-bolt"></i> Microservices demo</span>
+        <h1>Welcome to Stan's Robot Shop</h1>
+        <p>
+            Every robot here is built, boxed and shipped by an independent microservice.
+            Browse the catalogue, fill your cart and check out end to end &mdash; the whole
+            journey crosses Node.js, Java, Python, MongoDB, MySQL, Redis and RabbitMQ.
+        </p>
+        <div class="form-foot" style="justify-content:flex-start">
+            <a class="btn" href="/products"><i class="ti ti-robot"></i> Browse products</a>
+            <a class="btn btn-ghost" href="/register" ng-if="!data.user"><i class="ti ti-user-plus"></i> Create an account</a>
+        </div>
+    </div>
+    <img src="/media/stan.png" alt="Stan the robot"/>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3><i class="ti ti-server-bolt"></i> Polyglot services</h3>
+        <p class="hint">
+            Catalogue, cart and user run on Node.js, shipping on Spring Boot 3,
+            payment on Flask &mdash; each independently deployable.
+        </p>
+    </div>
+    <div class="card">
+        <h3><i class="ti ti-shield-lock"></i> Real authentication</h3>
+        <p class="hint">
+            JWT access and refresh tokens, bcrypt password hashing, rate limited
+            credential endpoints and role based authorization.
+        </p>
+    </div>
+    <div class="card">
+        <h3><i class="ti ti-brand-kubernetes"></i> Ships to Kubernetes</h3>
+        <p class="hint">
+            Production manifests with an AWS ALB Ingress, HPAs, network policies
+            and persistent volumes for every stateful backend.
+        </p>
+    </div>
+</div>

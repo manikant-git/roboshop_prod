@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roboshop-config
+  namespace: roboshop
+  labels:
+    app.kubernetes.io/part-of: roboshop
+data:
+  MONGO_URL_CATALOGUE: "mongodb://mongodb:27017/catalogue"
+  MONGO_URL_USER: "mongodb://mongodb:27017/users"
+  REDIS_URL: "redis://redis:6379"
+  REDIS_HOST: "redis"
+  CATALOGUE_HOST: "catalogue"
+  CATALOGUE_PORT: "8080"
+  CART_HOST: "cart"
+  CART_PORT: "8080"
+  CART_ENDPOINT: "cart:8080"
+  USER_HOST: "user"
+  USER_PORT: "8080"
+  DB_HOST: "mysql"
+  AMQP_HOST: "rabbitmq"
+  ACCESS_TOKEN_TTL: "15m"
+  REFRESH_TOKEN_TTL: "7d"
+  NODE_ENV: "production"
+---
+# NOTE: this manifest contains placeholder values so the stack can be applied
+# end to end. In a real cluster replace it with a SecretProviderClass backed by
+# AWS Secrets Manager / SSM (Secrets Store CSI driver) or External Secrets, and
+# never commit real credentials.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: roboshop-secrets
+  namespace: roboshop
+  labels:
+    app.kubernetes.io/part-of: roboshop
+type: Opaque
+stringData:
+  JWT_ACCESS_SECRET: "REPLACE_WITH_32_BYTE_RANDOM_VALUE"
+  JWT_REFRESH_SECRET: "REPLACE_WITH_ANOTHER_32_BYTE_RANDOM_VALUE"
+  MYSQL_ROOT_PASSWORD: "RoboShop@1"
+  AMQP_USER: "roboshop"
+  AMQP_PASS: "roboshop123"
+  RABBITMQ_DEFAULT_USER: "roboshop"
+  RABBITMQ_DEFAULT_PASS: "roboshop123"

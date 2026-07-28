@@ -1,0 +1,35 @@
+<!-- forgot password -->
+<div class="auth-wrap">
+    <div class="card">
+        <div class="auth-head">
+            <h2><i class="ti ti-key"></i> Reset your password</h2>
+            <p>Enter your email and we'll issue a reset token.</p>
+        </div>
+
+        <form class="form" ng-submit="requestReset();" novalidate ng-if="!data.issued">
+            <div class="field">
+                <label for="fp-email">Email</label>
+                <input id="fp-email" type="email" autocomplete="email"
+                       ng-model="data.email" ng-class="{ invalid: errors.email }"/>
+                <div class="error-text" ng-if="errors.email"><i class="ti ti-alert-circle"></i> {{ errors.email }}</div>
+            </div>
+            <button class="btn-block" type="submit" ng-disabled="data.busy">
+                <span class="spinner-sm" ng-if="data.busy"></span>
+                <i class="ti ti-send" ng-if="!data.busy"></i>
+                {{ data.busy ? 'Sending…' : 'Send reset token' }}
+            </button>
+            <p class="hint" style="text-align:center;margin:0"><a href="/login">Back to sign in</a></p>
+        </form>
+
+        <div ng-if="data.issued">
+            <p><i class="ti ti-circle-check"></i> If that email is registered a reset token has been issued.</p>
+            <p class="hint" ng-if="data.resetToken">
+                No mail transport is configured in this deployment, so the token is shown here:
+            </p>
+            <div class="field" ng-if="data.resetToken">
+                <input type="text" readonly ng-model="data.resetToken"/>
+            </div>
+            <a class="btn btn-block" href="/reset-password"><i class="ti ti-lock-open"></i> Continue to reset</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+<!-- search results -->
+<div class="card">
+    <h2><i class="ti ti-search"></i> Search results</h2>
+    <p class="hint" ng-if="!data.loading">{{ data.searchResults.length }} match(es) for "{{ data.term }}".</p>
+</div>
+
+<div class="grid" style="margin-top:18px" ng-if="data.loading">
+    <div class="skeleton" ng-repeat="n in [1,2,3]"></div>
+</div>
+
+<div class="card empty-state" style="margin-top:18px" ng-if="!data.loading && data.searchResults.length == 0">
+    <i class="ti ti-mood-search"></i>
+    Nothing matched your search. Try another robot.
+</div>
+
+<div class="grid" style="margin-top:18px" ng-if="!data.loading && data.searchResults.length">
+    <div class="product-card" ng-repeat="item in data.searchResults">
+        <a class="thumb" href="/product/{{ item.sku }}">
+            <img ng-src="/images/{{ item.sku }}.png" alt="{{ item.name }}"/>
+        </a>
+        <div class="body">
+            <a class="name" href="/product/{{ item.sku }}">{{ item.name }}</a>
+            <div class="desc">{{ item.description }}</div>
+            <div class="foot">
+                <span class="price">&euro;{{ item.price.toFixed(2) }}</span>
+                <a class="btn btn-ghost" href="/product/{{ item.sku }}"><i class="ti ti-eye"></i> View</a>
+            </div>
+        </div>
+    </div>
+</div>

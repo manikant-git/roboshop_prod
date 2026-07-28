@@ -1,0 +1,38 @@
+<!-- reset password -->
+<div class="auth-wrap">
+    <div class="card">
+        <div class="auth-head">
+            <h2><i class="ti ti-lock-open"></i> Choose a new password</h2>
+            <p>Paste the reset token you were issued.</p>
+        </div>
+
+        <form class="form" ng-submit="resetPassword();" novalidate>
+            <div class="field">
+                <label for="rp-token">Reset token</label>
+                <input id="rp-token" type="text" ng-model="data.token" ng-class="{ invalid: errors.token }"/>
+                <div class="error-text" ng-if="errors.token"><i class="ti ti-alert-circle"></i> {{ errors.token }}</div>
+            </div>
+            <div class="field">
+                <label for="rp-pass">New password</label>
+                <input id="rp-pass" type="password" autocomplete="new-password"
+                       ng-model="data.password" ng-change="scorePassword();" ng-class="{ invalid: errors.password }"/>
+                <div class="strength" ng-class="'s' + data.strength">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="hint">{{ data.strengthLabel }}</div>
+                <div class="error-text" ng-if="errors.password"><i class="ti ti-alert-circle"></i> {{ errors.password }}</div>
+            </div>
+            <div class="field">
+                <label for="rp-pass2">Confirm new password</label>
+                <input id="rp-pass2" type="password" autocomplete="new-password"
+                       ng-model="data.confirmPassword" ng-class="{ invalid: errors.confirmPassword }"/>
+                <div class="error-text" ng-if="errors.confirmPassword"><i class="ti ti-alert-circle"></i> {{ errors.confirmPassword }}</div>
+            </div>
+            <button class="btn-block" type="submit" ng-disabled="data.busy">
+                <span class="spinner-sm" ng-if="data.busy"></span>
+                <i class="ti ti-device-floppy" ng-if="!data.busy"></i>
+                {{ data.busy ? 'Updating…' : 'Update password' }}
+            </button>
+        </form>
+    </div>
+</div>

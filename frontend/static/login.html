@@ -1,0 +1,42 @@
+<!-- login -->
+<div class="auth-wrap">
+    <div class="card">
+        <div class="auth-head">
+            <h2><i class="ti ti-login-2"></i> Sign in</h2>
+            <p>Welcome back to Stan's Robot Shop.</p>
+        </div>
+
+        <form class="form" name="loginForm" ng-submit="login();" novalidate>
+            <div class="field">
+                <label for="login-email">Email or username</label>
+                <input id="login-email" type="text" autocomplete="username"
+                       ng-model="data.email" ng-class="{ invalid: errors.email }"/>
+                <div class="error-text" ng-if="errors.email"><i class="ti ti-alert-circle"></i> {{ errors.email }}</div>
+            </div>
+
+            <div class="field">
+                <label for="login-password">Password</label>
+                <input id="login-password" type="password" autocomplete="current-password"
+                       ng-model="data.password" ng-class="{ invalid: errors.password }"/>
+                <div class="error-text" ng-if="errors.password"><i class="ti ti-alert-circle"></i> {{ errors.password }}</div>
+            </div>
+
+            <div class="form-foot">
+                <label class="check">
+                    <input type="checkbox" ng-model="data.remember"/> Remember me
+                </label>
+                <a href="/forgot-password">Forgot password?</a>
+            </div>
+
+            <button class="btn-block" type="submit" ng-disabled="data.busy">
+                <span class="spinner-sm" ng-if="data.busy"></span>
+                <i class="ti ti-login" ng-if="!data.busy"></i>
+                {{ data.busy ? 'Signing in…' : 'Sign in' }}
+            </button>
+
+            <p class="hint" style="text-align:center;margin:0">
+                New here? <a href="/register">Create an account</a>
+            </p>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,37 @@
+<!-- product details -->
+<div class="card">
+    <div class="product-detail">
+        <div class="productimage">
+            <img ng-src="/images/{{ data.product.sku }}.png" alt="{{ data.product.name }}"/>
+        </div>
+        <div>
+            <h2>{{ data.product.name }}</h2>
+            <div class="rating">
+                <span ng-if="data.rating.avg_rating != 0">
+                    <i class="ti ti-star-filled" style="color:var(--amber)"></i>
+                    {{ data.rating.avg_rating.toFixed(1) }} from {{ data.rating.rating_count }} votes
+                </span>
+                <span ng-if="data.rating.avg_rating == 0">No votes yet &mdash; be the first.</span>
+                <span>
+                    <img id="vote-{{ vote }}" class="vote-star" ng-repeat="vote in [1,2,3,4,5]"
+                         alt="Rate {{ vote }}" src="/media/instana_icon_square.png"
+                         ng-mouseover="glowstan(vote, 1.0);" ng-mouseleave="glowstan(vote, 0.45);"
+                         ng-click="rateProduct(vote);"/>
+                </span>
+            </div>
+            <p class="description">{{ data.product.description }}</p>
+            <p class="price">&euro;{{ data.product.price ? data.product.price.toFixed(2) : '0.00' }}</p>
+            <p ng-if="data.product.instock == 0" class="stock-out"><i class="ti ti-x"></i> Out of stock</p>
+            <div ng-if="data.product.instock != 0">
+                <p class="stock-in"><i class="ti ti-check"></i> In stock ({{ data.product.instock }})</p>
+                <div class="form-foot" style="justify-content:flex-start">
+                    <input type="number" min="1" max="10" ng-model="data.quantity" aria-label="Quantity"/>
+                    <button type="button" ng-click="addToCart();" ng-disabled="data.busy">
+                        <span class="spinner-sm" ng-if="data.busy"></span>
+                        <i class="ti ti-shopping-cart-plus" ng-if="!data.busy"></i> Add to cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,40 @@
+<!-- order history -->
+<div class="card">
+    <h2><i class="ti ti-package"></i> Your orders</h2>
+    <p class="hint">Every order placed with this account.</p>
+</div>
+
+<div class="card" style="margin-top:18px" ng-if="data.loading">
+    <div class="skeleton" style="height:120px"></div>
+</div>
+
+<div class="card empty-state" style="margin-top:18px" ng-if="!data.loading && data.orders.length === 0">
+    <i class="ti ti-package-off"></i>
+    You haven't placed any orders yet.
+    <div style="margin-top:14px"><a class="btn" href="/products"><i class="ti ti-robot"></i> Start shopping</a></div>
+</div>
+
+<div class="card" style="margin-top:18px" ng-if="!data.loading && data.orders.length" ng-repeat="order in data.orders">
+    <div class="form-foot">
+        <h3 style="margin:0"><i class="ti ti-receipt"></i> Order {{ order.orderid }}</h3>
+        <span class="badge" ng-if="order.placedAt">{{ order.placedAt | date:'medium' }}</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Qty</th>
+                <th>Item</th>
+                <th class="currency">Sub total</th>
+            </tr>
+            <tr ng-repeat="item in order.cart.items">
+                <td>{{ item.qty }}</td>
+                <td>{{ item.name }}</td>
+                <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>Total</strong></td>
+                <td class="currency">&euro;{{ order.cart.total.toFixed(2) }}</td>
+            </tr>
+        </table>
+    </div>
+</div>

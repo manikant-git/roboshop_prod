@@ -1,0 +1,81 @@
+<!-- register -->
+<div class="auth-wrap">
+    <div class="card">
+        <div class="auth-head">
+            <h2><i class="ti ti-user-plus"></i> Create your account</h2>
+            <p>Join the shop to keep your cart and track your orders.</p>
+        </div>
+
+        <form class="form" name="registerForm" ng-submit="register();" novalidate>
+            <div class="form-row">
+                <div class="field">
+                    <label for="reg-first">First name</label>
+                    <input id="reg-first" type="text" autocomplete="given-name"
+                           ng-model="data.firstName" ng-class="{ invalid: errors.firstName }"/>
+                    <div class="error-text" ng-if="errors.firstName"><i class="ti ti-alert-circle"></i> {{ errors.firstName }}</div>
+                </div>
+                <div class="field">
+                    <label for="reg-last">Last name</label>
+                    <input id="reg-last" type="text" autocomplete="family-name"
+                           ng-model="data.lastName" ng-class="{ invalid: errors.lastName }"/>
+                    <div class="error-text" ng-if="errors.lastName"><i class="ti ti-alert-circle"></i> {{ errors.lastName }}</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="reg-user">Username</label>
+                <input id="reg-user" type="text" autocomplete="username"
+                       ng-model="data.name" ng-change="checkUsername();" ng-class="{ invalid: errors.name }"/>
+                <div class="error-text" ng-if="errors.name"><i class="ti ti-alert-circle"></i> {{ errors.name }}</div>
+                <div class="hint" ng-if="!errors.name && data.usernameOk">
+                    <i class="ti ti-circle-check"></i> {{ data.name }} is available
+                </div>
+                <div class="hint" ng-if="!errors.name && !data.usernameOk">3-30 characters: letters, digits, dot, underscore or dash.</div>
+            </div>
+
+            <div class="field">
+                <label for="reg-email">Email</label>
+                <input id="reg-email" type="email" autocomplete="email"
+                       ng-model="data.email" ng-change="checkEmail();" ng-class="{ invalid: errors.email }"/>
+                <div class="error-text" ng-if="errors.email"><i class="ti ti-alert-circle"></i> {{ errors.email }}</div>
+                <div class="hint" ng-if="!errors.email && data.emailOk"><i class="ti ti-circle-check"></i> Email available</div>
+            </div>
+
+            <div class="field">
+                <label for="reg-phone">Phone</label>
+                <input id="reg-phone" type="tel" autocomplete="tel"
+                       ng-model="data.phone" ng-class="{ invalid: errors.phone }"/>
+                <div class="error-text" ng-if="errors.phone"><i class="ti ti-alert-circle"></i> {{ errors.phone }}</div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label for="reg-pass">Password</label>
+                    <input id="reg-pass" type="password" autocomplete="new-password"
+                           ng-model="data.password" ng-change="scorePassword();" ng-class="{ invalid: errors.password }"/>
+                    <div class="strength" ng-class="'s' + data.strength">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="hint">{{ data.strengthLabel }}</div>
+                    <div class="error-text" ng-if="errors.password"><i class="ti ti-alert-circle"></i> {{ errors.password }}</div>
+                </div>
+                <div class="field">
+                    <label for="reg-pass2">Confirm password</label>
+                    <input id="reg-pass2" type="password" autocomplete="new-password"
+                           ng-model="data.confirmPassword" ng-class="{ invalid: errors.confirmPassword }"/>
+                    <div class="error-text" ng-if="errors.confirmPassword"><i class="ti ti-alert-circle"></i> {{ errors.confirmPassword }}</div>
+                </div>
+            </div>
+
+            <button class="btn-block" type="submit" ng-disabled="data.busy">
+                <span class="spinner-sm" ng-if="data.busy"></span>
+                <i class="ti ti-user-check" ng-if="!data.busy"></i>
+                {{ data.busy ? 'Creating account…' : 'Create account' }}
+            </button>
+
+            <p class="hint" style="text-align:center;margin:0">
+                Already registered? <a href="/login">Sign in</a>
+            </p>
+        </form>
+    </div>
+</div>

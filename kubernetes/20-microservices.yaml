@@ -1,0 +1,358 @@
+# Application microservices: Deployment + Service for each.
+# Every pod runs unprivileged with a read-only root filesystem where the
+# runtime allows it, and exposes /health for the kubelet probes.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: roboshop
+  namespace: roboshop
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue
+  namespace: roboshop
+  labels: { app: catalogue, app.kubernetes.io/part-of: roboshop }
+spec:
+  selector: { app: catalogue }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue
+  namespace: roboshop
+  labels: { app: catalogue, app.kubernetes.io/part-of: roboshop }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app: catalogue }
+  template:
+    metadata:
+      labels: { app: catalogue }
+    spec:
+      serviceAccountName: roboshop
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app: catalogue } }
+      containers:
+        - name: catalogue
+          image: joindevops/catalogue:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - name: MONGO_URL
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: MONGO_URL_CATALOGUE } }
+            - name: NODE_ENV
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: NODE_ENV } }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user
+  namespace: roboshop
+  labels: { app: user, app.kubernetes.io/part-of: roboshop }
+spec:
+  selector: { app: user }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user
+  namespace: roboshop
+  labels: { app: user, app.kubernetes.io/part-of: roboshop }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app: user }
+  template:
+    metadata:
+      labels: { app: user }
+    spec:
+      serviceAccountName: roboshop
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app: user } }
+      containers:
+        - name: user
+          image: joindevops/user:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - name: MONGO_URL
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: MONGO_URL_USER } }
+            - name: REDIS_URL
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: REDIS_URL } }
+            - name: ACCESS_TOKEN_TTL
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: ACCESS_TOKEN_TTL } }
+            - name: REFRESH_TOKEN_TTL
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: REFRESH_TOKEN_TTL } }
+            - name: NODE_ENV
+              valueFrom: { configMapKeyRef: { name: roboshop-config, key: NODE_ENV } }
+            - name: JWT_ACCESS_SECRET
+              valueFrom: { secretKeyRef: { name: roboshop-secrets, key: JWT_ACCESS_SECRET } }
+            - name: JWT_REFRESH_SECRET
+              valueFrom: { secretKeyRef: { name: roboshop-secrets, key: JWT_REFRESH_SECRET } }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart
+  namespace: roboshop
+  labels: { app: cart, app.kubernetes.io/part-of: roboshop }
+spec:
+  selector: { app: cart }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+  namespace: roboshop
+  labels: { app: cart, app.kubernetes.io/part-of: roboshop }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app: cart }
+  template:
+    metadata:
+      labels: { app: cart }
+    spec:
+      serviceAccountName: roboshop
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: cart
+          image: joindevops/cart:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: roboshop-config }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipping
+  namespace: roboshop
+  labels: { app: shipping, app.kubernetes.io/part-of: roboshop }
+spec:
+  selector: { app: shipping }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  namespace: roboshop
+  labels: { app: shipping, app.kubernetes.io/part-of: roboshop }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app: shipping }
+  template:
+    metadata:
+      labels: { app: shipping }
+    spec:
+      serviceAccountName: roboshop
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: shipping
+          image: joindevops/shipping:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: roboshop-config }
+          env:
+            - name: JAVA_OPTS
+              value: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC"
+          resources:
+            requests: { cpu: 300m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            failureThreshold: 60
+            periodSeconds: 3
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment
+  namespace: roboshop
+  labels: { app: payment, app.kubernetes.io/part-of: roboshop }
+spec:
+  selector: { app: payment }
+  ports: [{ name: http, port: 8080, targetPort: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment
+  namespace: roboshop
+  labels: { app: payment, app.kubernetes.io/part-of: roboshop }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: { app: payment }
+  template:
+    metadata:
+      labels: { app: payment }
+    spec:
+      serviceAccountName: roboshop
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: payment
+          image: joindevops/payment:2.0.0
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: roboshop-config }
+          env:
+            - name: AMQP_USER
+              valueFrom: { secretKeyRef: { name: roboshop-secrets, key: AMQP_USER } }
+            - name: AMQP_PASS
+              valueFrom: { secretKeyRef: { name: roboshop-secrets, key: AMQP_PASS } }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]

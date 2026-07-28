@@ -1,0 +1,34 @@
+<!-- all products -->
+<div class="card">
+    <h2><i class="ti ti-robot"></i> All products</h2>
+    <p class="hint">{{ data.products.length }} robots ready to ship.</p>
+</div>
+
+<div class="grid" style="margin-top:18px" ng-if="data.loading">
+    <div class="skeleton" ng-repeat="n in [1,2,3,4,5,6]"></div>
+</div>
+
+<div class="empty-state" ng-if="!data.loading && data.products.length === 0">
+    <i class="ti ti-mood-empty"></i>
+    Nothing in the catalogue right now.
+</div>
+
+<div class="grid" style="margin-top:18px" ng-if="!data.loading && data.products.length">
+    <div class="product-card" ng-repeat="prod in data.products">
+        <a class="thumb" href="/product/{{ prod.sku }}">
+            <img ng-src="/images/{{ prod.sku }}.png" alt="{{ prod.name }}"/>
+        </a>
+        <div class="body">
+            <a class="name" href="/product/{{ prod.sku }}">{{ prod.name }}</a>
+            <div class="desc">{{ prod.description }}</div>
+            <div class="foot">
+                <span class="price">&euro;{{ prod.price.toFixed(2) }}</span>
+                <button type="button" ng-disabled="prod.instock === 0 || data.adding === prod.sku" ng-click="addToCart(prod);">
+                    <span class="spinner-sm" ng-if="data.adding === prod.sku"></span>
+                    <i class="ti ti-shopping-cart-plus" ng-if="data.adding !== prod.sku"></i>
+                    {{ prod.instock === 0 ? 'Sold out' : 'Add' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

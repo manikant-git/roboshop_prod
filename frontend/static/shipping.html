@@ -1,0 +1,40 @@
+<!-- shipping -->
+<div class="card">
+    <div class="steps">
+        <span class="step"><i class="ti ti-shopping-cart"></i> Cart</span>
+        <span>&rsaquo;</span>
+        <span class="step active"><i class="ti ti-truck-delivery"></i> Shipping</span>
+        <span>&rsaquo;</span>
+        <span class="step"><i class="ti ti-credit-card"></i> Payment</span>
+    </div>
+    <h2><i class="ti ti-truck-delivery"></i> Where is it going?</h2>
+
+    <div class="form">
+        <div class="field">
+            <label for="country">Country</label>
+            <select id="country" ng-change="countryChanged();" ng-model="data.selectedCountry"
+                    ng-options="opt.name for opt in data.countries track by opt.code"></select>
+        </div>
+        <div class="field">
+            <label for="location">Town or city</label>
+            <input id="location" type="text" ng-model="data.selectedLocation" ng-disabled="data.disableCity"
+                   placeholder="Start typing…"/>
+            <div class="hint">Pick a suggestion to enable the calculator.</div>
+        </div>
+        <div>
+            <button type="button" ng-click="calcShipping();" ng-disabled="data.disableCalc || data.busy">
+                <span class="spinner-sm" ng-if="data.busy"></span>
+                <i class="ti ti-calculator" ng-if="!data.busy"></i> Calculate shipping
+            </button>
+        </div>
+
+        <div class="card" ng-if="data.shipping" style="background:var(--surface-2)">
+            <p><i class="ti ti-route"></i> Distance <strong>{{ data.shipping.distance }} km</strong></p>
+            <p><i class="ti ti-coin-euro"></i> Cost <strong class="price">&euro;{{ data.shipping.cost.toFixed(2) }}</strong></p>
+            <button type="button" ng-click="confirmShipping();" ng-disabled="data.confirming">
+                <span class="spinner-sm" ng-if="data.confirming"></span>
+                <i class="ti ti-check" ng-if="!data.confirming"></i> Confirm and pay
+            </button>
+        </div>
+    </div>
+</div>

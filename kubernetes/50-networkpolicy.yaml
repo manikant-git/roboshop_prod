@@ -1,0 +1,82 @@
+# Default deny inside the namespace, then allow only the traffic the shop needs.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: roboshop
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: roboshop
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to:
+        - podSelector: {}
+---
+# The ALB targets pod IPs directly, so ingress to the frontend comes from
+# outside the cluster network namespace selectors.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alb-to-frontend
+  namespace: roboshop
+spec:
+  podSelector: { matchLabels: { app: frontend } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - ipBlock: { cidr: 0.0.0.0/0 }
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-services
+  namespace: roboshop
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [catalogue, user, cart, shipping, payment] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: frontend } }
+        - podSelector: { matchLabels: { app: cart } }
+        - podSelector: { matchLabels: { app: shipping } }
+        - podSelector: { matchLabels: { app: payment } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-services-to-datastores
+  namespace: roboshop
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [mongodb, mysql, redis, rabbitmq] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app, operator: In, values: [catalogue, user, cart, shipping, payment] }
+      ports:
+        - { protocol: TCP, port: 27017 }
+        - { protocol: TCP, port: 3306 }
+        - { protocol: TCP, port: 6379 }
+        - { protocol: TCP, port: 5672 }

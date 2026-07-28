@@ -1,0 +1,75 @@
+<!-- profile -->
+<div class="card">
+    <h2><i class="ti ti-id-badge-2"></i> Your profile</h2>
+    <p class="hint">
+        <span class="badge"><i class="ti ti-shield-check"></i> {{ data.user.role }}</span>
+        Member since {{ data.user.createdAt | date:'mediumDate' }}
+    </p>
+</div>
+
+<div class="card" style="margin-top:18px">
+    <h3><i class="ti ti-user-edit"></i> Details</h3>
+    <form class="form" ng-submit="saveProfile();" novalidate>
+        <div class="form-row">
+            <div class="field">
+                <label for="pf-first">First name</label>
+                <input id="pf-first" type="text" ng-model="data.form.firstName"/>
+            </div>
+            <div class="field">
+                <label for="pf-last">Last name</label>
+                <input id="pf-last" type="text" ng-model="data.form.lastName"/>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="field">
+                <label for="pf-user">Username</label>
+                <input id="pf-user" type="text" ng-model="data.user.name" disabled/>
+            </div>
+            <div class="field">
+                <label for="pf-email">Email</label>
+                <input id="pf-email" type="email" ng-model="data.user.email" disabled/>
+            </div>
+        </div>
+        <div class="field">
+            <label for="pf-phone">Phone</label>
+            <input id="pf-phone" type="tel" ng-model="data.form.phone"/>
+        </div>
+        <div class="form-foot">
+            <button type="submit" ng-disabled="data.busy">
+                <span class="spinner-sm" ng-if="data.busy"></span>
+                <i class="ti ti-device-floppy" ng-if="!data.busy"></i> Save changes
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top:18px">
+    <h3><i class="ti ti-lock-cog"></i> Change password</h3>
+    <form class="form" ng-submit="changePassword();" novalidate>
+        <div class="field">
+            <label for="pf-cur">Current password</label>
+            <input id="pf-cur" type="password" autocomplete="current-password" ng-model="data.pw.current"/>
+        </div>
+        <div class="form-row">
+            <div class="field">
+                <label for="pf-new">New password</label>
+                <input id="pf-new" type="password" autocomplete="new-password" ng-model="data.pw.next" ng-change="scorePassword();"/>
+                <div class="strength" ng-class="'s' + data.strength">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="hint">{{ data.strengthLabel }}</div>
+            </div>
+            <div class="field">
+                <label for="pf-new2">Confirm new password</label>
+                <input id="pf-new2" type="password" autocomplete="new-password" ng-model="data.pw.confirm"/>
+            </div>
+        </div>
+        <div class="form-foot">
+            <button type="submit" class="btn-ghost" ng-disabled="data.pwBusy">
+                <span class="spinner-sm" ng-if="data.pwBusy"></span>
+                <i class="ti ti-key" ng-if="!data.pwBusy"></i> Update password
+            </button>
+            <span class="hint">You will be signed out on all devices after changing your password.</span>
+        </div>
+    </form>
+</div>

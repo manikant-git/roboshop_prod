@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <base href="/"/>
+    <!--# include file="eum.html" -->
+    <title>Stan's Robot Shop</title>
+    <meta name="description" content="Stan's Robot Shop - a microservices demo e-commerce store for robots and robot parts."/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="shortcut icon" type="image/png" href="/media/instana_icon_square.png"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+    <link rel="stylesheet" href="/css/style.css"/>
+    <link rel="stylesheet" href="/css/auto-complete.css"/>
+    <meta http-equiv="Cache-Control" content="no-Cache">
+    <meta http-equiv="Pragma" content="no-cache">
+</head>
+
+<body ng-app="robotshop">
+<div ng-controller="shopform" class="app-shell">
+
+    <!-- top navigation -->
+    <header class="navbar">
+        <a class="brand" href="/">
+            <img class="brand-logo" src="/media/stan.png" alt="Stan the robot"/>
+            <span class="brand-text">Stan's <strong>Robot Shop</strong></span>
+        </a>
+
+        <form class="navsearch" ng-submit="search();">
+            <i class="ti ti-search"></i>
+            <input type="search" placeholder="Search the shop&hellip;" aria-label="Search products" ng-model="data.searchText"/>
+        </form>
+
+        <button class="nav-toggle" type="button" ng-click="toggleNav();" aria-label="Toggle navigation">
+            <i class="ti ti-menu-2"></i>
+        </button>
+
+        <nav class="navlinks" ng-class="{ open: data.navOpen }">
+            <a href="/" ng-click="closeNav();"><i class="ti ti-home"></i> Home</a>
+            <a href="/products" ng-click="closeNav();"><i class="ti ti-robot"></i> Products</a>
+            <a href="/cart" ng-click="closeNav();" class="cartlink">
+                <i class="ti ti-shopping-cart"></i> Cart
+                <span class="cart-badge" ng-if="data.cart.total > 0">&euro;{{ data.cart.total.toFixed(2) }}</span>
+            </a>
+
+            <span ng-if="!data.user">
+                <a href="/login" ng-click="closeNav();"><i class="ti ti-login"></i> Login</a>
+                <a class="btn-nav" href="/register" ng-click="closeNav();"><i class="ti ti-user-plus"></i> Register</a>
+            </span>
+
+            <span ng-if="data.user" class="userzone">
+                <span class="welcome"><i class="ti ti-user-circle"></i> Welcome {{ data.user.name }}</span>
+                <a href="/profile" ng-click="closeNav();"><i class="ti ti-id-badge-2"></i> Profile</a>
+                <a href="/orders" ng-click="closeNav();"><i class="ti ti-package"></i> Orders</a>
+                <button class="btn-logout" type="button" ng-click="logout();"><i class="ti ti-logout"></i> Logout</button>
+            </span>
+        </nav>
+    </header>
+
+    <div class="layout">
+        <!-- category sidebar -->
+        <aside class="sidebar">
+            <h3><i class="ti ti-category"></i> Categories</h3>
+            <ul class="catlist">
+                <li ng-repeat="cat in data.categories">
+                    <button type="button" class="category" ng-click="getProducts(cat);">
+                        <i class="ti" ng-class="data.products[cat] ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                        {{ cat }}
+                    </button>
+                    <ul ng-if="data.products[cat]" class="sublist">
+                        <li ng-repeat="prod in data.products[cat]">
+                            <a class="product" href="/product/{{ prod.sku }}">{{ prod.name }}</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="sidebar-foot">
+                <span class="tag"><i class="ti ti-id"></i> {{ data.uniqueid }}</span>
+            </div>
+        </aside>
+
+        <!-- routed view -->
+        <main class="main">
+            <div ng-view></div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <span>&copy; Stan's Robot Shop &mdash; microservices demo</span>
+        <span><a href="https://github.com/instana/robot-shop" target="_blank" rel="noopener">Source on GitHub</a></span>
+    </footer>
+
+    <!-- toast notifications -->
+    <div class="toaster">
+        <div class="toast" ng-repeat="t in toasts" ng-class="t.type">
+            <i class="ti" ng-class="{ success: 'ti-circle-check', error: 'ti-alert-triangle', info: 'ti-info-circle' }[t.type]"></i>
+            <span>{{ t.text }}</span>
+        </div>
+    </div>
+
+    <!-- global loading overlay -->
+    <div class="overlay" ng-if="loading.active">
+        <div class="spinner"></div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+<script src="/js/auto-complete.js"></script>
+<script src="/js/controller.js"></script>
+
+</body>
+</html>

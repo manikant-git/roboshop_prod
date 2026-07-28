@@ -1,0 +1,56 @@
+<!-- shopping cart -->
+<div class="card">
+    <div class="steps">
+        <span class="step active"><i class="ti ti-shopping-cart"></i> Cart</span>
+        <span>&rsaquo;</span>
+        <span class="step"><i class="ti ti-truck-delivery"></i> Shipping</span>
+        <span>&rsaquo;</span>
+        <span class="step"><i class="ti ti-credit-card"></i> Payment</span>
+    </div>
+    <h2><i class="ti ti-shopping-cart"></i> Your cart</h2>
+
+    <div class="empty-state" ng-if="!data.loading && data.cart.total == 0">
+        <i class="ti ti-shopping-cart-off"></i>
+        Your cart is empty &mdash; go and meet some robots.
+        <div style="margin-top:14px"><a class="btn" href="/products"><i class="ti ti-robot"></i> Browse products</a></div>
+    </div>
+
+    <div class="skeleton" style="height:150px" ng-if="data.loading"></div>
+
+    <div ng-if="!data.loading && data.cart.total != 0" class="table-wrap">
+        <table>
+            <tr>
+                <th>Qty</th>
+                <th>Item</th>
+                <th class="currency">Sub total</th>
+                <th></th>
+            </tr>
+            <tr ng-repeat="item in data.cart.items">
+                <td>
+                    <input type="number" min="0" max="10" ng-model="item.qty" ng-change="change(item.sku, item.qty);" aria-label="Quantity"/>
+                </td>
+                <td>{{ item.name }}</td>
+                <td class="currency">&euro;{{ item.subtotal.toFixed(2) }}</td>
+                <td>
+                    <button class="btn-ghost" type="button" ng-click="change(item.sku, 0);" aria-label="Remove item">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">Inc tax</td>
+                <td class="currency">&euro;{{ data.cart.tax.toFixed(2) }}</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>Total</strong></td>
+                <td class="currency">&euro;{{ data.cart.total.toFixed(2) }}</td>
+                <td></td>
+            </tr>
+        </table>
+        <div class="form-foot" style="margin-top:16px">
+            <a class="btn btn-ghost" href="/products"><i class="ti ti-arrow-left"></i> Keep shopping</a>
+            <button type="button" ng-click="buy();"><i class="ti ti-truck-delivery"></i> Checkout</button>
+        </div>
+    </div>
+</div>
