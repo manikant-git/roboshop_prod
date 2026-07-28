@@ -15,12 +15,14 @@ spec:
     - name: http
       port: 15672
       targetPort: 15672
+
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: rabbitmq
   namespace: roboshop
+
 spec:
   serviceName: rabbitmq
   replicas: 1
@@ -44,6 +46,7 @@ spec:
       initContainers:
         - name: volume-permissions
           image: busybox:1.36
+          imagePullPolicy: IfNotPresent
           command:
             - sh
             - -c
@@ -84,10 +87,11 @@ spec:
                   key: RABBITMQ_DEFAULT_PASS
 
           ports:
-            - containerPort: 5672
-              name: amqp
-            - containerPort: 15672
-              name: http
+            - name: amqp
+              containerPort: 5672
+
+            - name: http
+              containerPort: 15672
 
           readinessProbe:
             exec:
@@ -97,6 +101,8 @@ spec:
                 - ping
             initialDelaySeconds: 20
             periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
 
           livenessProbe:
             exec:
@@ -106,6 +112,8 @@ spec:
                 - status
             initialDelaySeconds: 60
             periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
 
           resources:
             requests:
