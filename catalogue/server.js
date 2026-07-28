@@ -26,6 +26,7 @@ let collection;
 let mongoConnected = false;
 
 const app = express();
+const router = express.Router();
 
 app.use(httpLogger);
 
@@ -63,7 +64,7 @@ app.get('/health', (req, res) => {
 });
 
 // all products
-app.get('/products', async (req, res) => {
+router.get('/products', async (req, res) => {
     if (!mongoConnected) {
         req.log.error('database not available');
         res.status(500).send('database not available');
@@ -79,7 +80,7 @@ app.get('/products', async (req, res) => {
 });
 
 // product by SKU
-app.get('/product/:sku', async (req, res) => {
+router.get('/product/:sku', async (req, res) => {
     if (!mongoConnected) {
         req.log.error('database not available');
         res.status(500).send('database not available');
@@ -104,7 +105,7 @@ app.get('/product/:sku', async (req, res) => {
 });
 
 // products in a category
-app.get('/products/:cat', async (req, res) => {
+router.get('/products/:cat', async (req, res) => {
     if (!mongoConnected) {
         req.log.error('database not available');
         res.status(500).send('database not available');
@@ -120,7 +121,7 @@ app.get('/products/:cat', async (req, res) => {
 });
 
 // all categories
-app.get('/categories', async (req, res) => {
+router.get('/categories', async (req, res) => {
     if (!mongoConnected) {
         req.log.error('database not available');
         res.status(500).send('database not available');
@@ -136,7 +137,7 @@ app.get('/categories', async (req, res) => {
 });
 
 // search name and description
-app.get('/search/:text', async (req, res) => {
+router.get('/search/:text', async (req, res) => {
     if (!mongoConnected) {
         req.log.error('database not available');
         res.status(500).send('database not available');
@@ -179,6 +180,10 @@ function mongoLoop() {
         setTimeout(mongoLoop, 2000);
     });
 }
+
+// Register catalogue routes
+app.use('/', router);
+app.use('/api/catalogue', router);
 
 mongoLoop();
 
