@@ -1,103 +1,128 @@
 services:
   catalogue:
-    build: ./catalogue
-    image: joindevops/catalogue:2.0.0
+    build:
+      context: ./catalogue
+      dockerfile: Dockerfile
+    image: catalogue:latest
     container_name: catalogue
     restart: unless-stopped
     environment:
-      MONGO_URL: "mongodb://mongodb:27017/catalogue"
+      MONGO_URL: mongodb://mongodb:27017/catalogue
     depends_on:
       - mongodb
+
   user:
-    build: ./user
-    image: joindevops/user:2.0.0
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    image: user:latest
     container_name: user
     restart: unless-stopped
     environment:
-      MONGO_URL: "mongodb://mongodb:27017/users"
-      REDIS_URL: "redis://redis:6379"
-      JWT_ACCESS_SECRET: "dev-access-secret-change-me"
-      JWT_REFRESH_SECRET: "dev-refresh-secret-change-me"
-      ACCESS_TOKEN_TTL: "15m"
-      REFRESH_TOKEN_TTL: "7d"
+      MONGO_URL: mongodb://mongodb:27017/users
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: dev-access-secret-change-me
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-me
+      ACCESS_TOKEN_TTL: 15m
+      REFRESH_TOKEN_TTL: 7d
     depends_on:
-      - redis
       - mongodb
+      - redis
+
   cart:
-    build: ./cart
-    image: joindevops/cart:2.0.0
+    build:
+      context: ./cart
+      dockerfile: Dockerfile
+    image: cart:latest
     container_name: cart
     restart: unless-stopped
     environment:
-      REDIS_HOST: "redis"
-      CATALOGUE_HOST: "catalogue"
+      REDIS_HOST: redis
+      CATALOGUE_HOST: catalogue
       CATALOGUE_PORT: "8080"
     depends_on:
       - redis
       - catalogue
+
   shipping:
-    build: ./shipping
-    image: joindevops/shipping:2.0.0
+    build:
+      context: ./shipping
+      dockerfile: Dockerfile
+    image: shipping:latest
     container_name: shipping
     restart: unless-stopped
     environment:
-      DB_HOST: "mysql"
-      CART_ENDPOINT: "cart:8080"
+      DB_HOST: mysql
+      CART_ENDPOINT: cart:8080
     depends_on:
       - mysql
       - cart
+
   payment:
-    build: ./payment
-    image: joindevops/payment:2.0.0
+    build:
+      context: ./payment
+      dockerfile: Dockerfile
+    image: payment:latest
     container_name: payment
     restart: unless-stopped
     environment:
-      CART_HOST: "cart"
+      CART_HOST: cart
       CART_PORT: "8080"
-      USER_HOST: "user"
+      USER_HOST: user
       USER_PORT: "8080"
-      AMQP_HOST: "rabbitmq"
-      AMQP_USER: "roboshop"
-      AMQP_PASS: "roboshop123"
+      AMQP_HOST: rabbitmq
+      AMQP_USER: roboshop
+      AMQP_PASS: roboshop123
     depends_on:
       - rabbitmq
       - cart
       - user
+
   frontend:
-    build: ./frontend
-    image: joindevops/frontend:2.0.0
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend:latest
     container_name: frontend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "80:80"
     depends_on:
       - catalogue
       - user
       - cart
       - shipping
       - payment
+
   mongodb:
-    build: ./mongodb
-    image: joindevops/mongodb:2.0.0
+    build:
+      context: ./mongodb
+      dockerfile: Dockerfile
+    image: mongodb:latest
     container_name: mongodb
     restart: unless-stopped
     volumes:
       - mongodb:/data/db
+
+  mysql:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    image: mysql:latest
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: RoboShop@1
+    volumes:
+      - mysql:/var/lib/mysql
+
   redis:
     image: redis:7.4-alpine
     container_name: redis
     restart: unless-stopped
     volumes:
       - redis:/data
-  mysql:
-    build: ./mysql
-    image: joindevops/mysql:2.0.0
-    container_name: mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: "RoboShop@1"
-    volumes:
-      - mysql:/var/lib/mysql
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq
@@ -107,13 +132,14 @@ services:
       RABBITMQ_DEFAULT_PASS: roboshop123
     volumes:
       - rabbitmq:/var/lib/rabbitmq
-networks:
-  default:
-    driver: bridge
-    name: roboshop
-    external: false
+
 volumes:
   mongodb:
-  redis:
   mysql:
+  redis:
   rabbitmq:
+
+networks:
+  default:
+    name: roboshop
+    driver: bridge
