@@ -66,7 +66,7 @@ public class Controller {
         return String.valueOf(count);
     }
 
-    @GetMapping("/codes")
+    @GetMapping({"/codes", "/api/shipping/codes"})
     public Iterable<Code> codes() {
         logger.info("all codes");
 
@@ -75,7 +75,7 @@ public class Controller {
         return codes;
     }
 
-    @GetMapping("/cities/{code}")
+    @GetMapping({"/cities/{code}", "/api/shipping/cities/{code}"})
     public List<City> cities(@PathVariable String code) {
         logger.info("cities by code {}", code);
 
@@ -84,7 +84,7 @@ public class Controller {
         return cities;
     }
 
-    @GetMapping("/match/{code}/{text}")
+    @GetMapping({"/match/{code}/{text}", "/api/shipping/match/{code}/{text}"})
     public List<City> match(@PathVariable String code, @PathVariable String text) {
         logger.info("match code {} text {}", code, text);
 
@@ -105,7 +105,7 @@ public class Controller {
         return cities;
     }
 
-    @GetMapping("/calc/{id}")
+    @GetMapping({"/calc/{id}", "/api/shipping/calc/{id}"})
     public Ship caclc(@PathVariable long id) {
         double homeLatitude = 51.164896;
         double homeLongitude = 7.068792;
@@ -128,7 +128,7 @@ public class Controller {
     }
 
     // enforce content type
-    @PostMapping(path = "/confirm/{id}", consumes = "application/json", produces = "application/json")
+    @PostMapping(path = {"/confirm/{id}", "/api/shipping/confirm/{id}"}, consumes = "application/json", produces = "application/json")
     public String confirm(@PathVariable String id, @RequestBody String body) {
         logger.info("confirm id: {}", id);
         logger.info("body {}", body);
