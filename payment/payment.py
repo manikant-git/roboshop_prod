@@ -54,6 +54,7 @@ def metrics():
 
 
 @app.route('/pay/<id>', methods=['POST'])
+@app.route('/api/payment/pay/<id>', methods=['POST'])
 def pay(id):
     app.logger.info('payment for {}'.format(id))
     cart = request.get_json()
