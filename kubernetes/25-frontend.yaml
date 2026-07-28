@@ -1,5 +1,6 @@
 # Frontend: nginx serving the SPA and proxying /api/* to the services.
 # The Service is the ALB target group (IP target mode).
+# The Service is the ALB target group (IP target mode).
 apiVersion: v1
 kind: Service
 metadata:
