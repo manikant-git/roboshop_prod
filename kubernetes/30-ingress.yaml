@@ -1,11 +1,24 @@
-# AWS Load Balancer Controller (ALB Ingress) - internet facing, HTTP -> HTTPS.
+# AWS Load Balancer Controller (ALB Ingress)
 #
-# Prerequisites:
-#   1. AWS Load Balancer Controller installed in the cluster (IRSA role with
-#      the AWSLoadBalancerControllerIAMPolicy attached).
-#   2. Public subnets tagged kubernetes.io/role/elb=1.
-#   3. An ACM certificate for the host below (or drop the TLS annotations and
-#      the redirect rule to run plain HTTP for a smoke test).
+# Architecture:
+#
+# Browser
+#    │
+# HTTPS
+#    │
+# AWS ALB
+#    │
+# Kubernetes Ingress
+#    ├── /api/catalogue -> catalogue
+#    ├── /api/user      -> user
+#    ├── /api/cart      -> cart
+#    ├── /api/payment   -> payment
+#    ├── /api/shipping  -> shipping
+#    └── /              -> frontend
+#
+# Frontend nginx serves only static files.
+# API routing is handled by the ALB Ingress.
+
 apiVersion: networking.k8s.io/v1
 kind: IngressClass
 metadata:
@@ -18,16 +31,21 @@ kind: Ingress
 metadata:
   name: roboshop
   namespace: roboshop
-  labels: { app.kubernetes.io/part-of: roboshop }
+  labels:
+    app.kubernetes.io/part-of: roboshop
+
   annotations:
     alb.ingress.kubernetes.io/load-balancer-name: roboshop-alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
-    # Replace with your ACM certificate ARN.
+
+    # Replace after ACM certificate is created
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT_ID:certificate/REPLACE_ME
+
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
     alb.ingress.kubernetes.io/healthcheck-path: /health
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
@@ -35,22 +53,64 @@ metadata:
     alb.ingress.kubernetes.io/healthy-threshold-count: "2"
     alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
     alb.ingress.kubernetes.io/success-codes: "200"
+
     alb.ingress.kubernetes.io/load-balancer-attributes: >-
       idle_timeout.timeout_seconds=60,
       routing.http2.enabled=true,
       routing.http.drop_invalid_header_fields.enabled=true,
       deletion_protection.enabled=false
+
     alb.ingress.kubernetes.io/tags: Project=roboshop,Environment=production
     alb.ingress.kubernetes.io/group.name: roboshop
+
 spec:
   ingressClassName: alb
+
   rules:
-    # Replace with your DNS name, or delete `host:` to accept any hostname.
-    - host: shop.example.com
+    - host: shop.streenzo.online
       http:
         paths:
-          # nginx in the frontend pod terminates every path, including /api/*,
-          # so the ALB only needs a single default rule.
+
+          - path: /api/catalogue
+            pathType: Prefix
+            backend:
+              service:
+                name: catalogue
+                port:
+                  number: 8080
+
+          - path: /api/user
+            pathType: Prefix
+            backend:
+              service:
+                name: user
+                port:
+                  number: 8080
+
+          - path: /api/cart
+            pathType: Prefix
+            backend:
+              service:
+                name: cart
+                port:
+                  number: 8080
+
+          - path: /api/payment
+            pathType: Prefix
+            backend:
+              service:
+                name: payment
+                port:
+                  number: 8080
+
+          - path: /api/shipping
+            pathType: Prefix
+            backend:
+              service:
+                name: shipping
+                port:
+                  number: 8080
+
           - path: /
             pathType: Prefix
             backend:
