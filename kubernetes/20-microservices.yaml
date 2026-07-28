@@ -196,7 +196,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: cart
-          image:  devopman/cart:2.0.0
+          image:  devopman/cart:2.0.1
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
@@ -259,7 +259,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: shipping
-          image: devopman/shipping:2.0.0
+          image: devopman/shipping:2.0.1
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
@@ -325,7 +325,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: payment
-          image: devopman/payment:2.0.0
+          image: devopman/payment:2.0.1
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
