@@ -1,4 +1,4 @@
-# Default deny inside the namespace, then allow only the traffic the shop needs.
+# Default deny all ingress within the namespace
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -6,8 +6,10 @@ metadata:
   namespace: roboshop
 spec:
   podSelector: {}
-  policyTypes: [Ingress]
+  policyTypes:
+    - Ingress
 ---
+# Allow DNS and internal pod-to-pod egress
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -15,51 +17,102 @@ metadata:
   namespace: roboshop
 spec:
   podSelector: {}
-  policyTypes: [Egress]
+  policyTypes:
+    - Egress
   egress:
     - to:
         - namespaceSelector: {}
       ports:
-        - { protocol: UDP, port: 53 }
-        - { protocol: TCP, port: 53 }
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
     - to:
         - podSelector: {}
 ---
-# The ALB targets pod IPs directly, so ingress to the frontend comes from
-# outside the cluster network namespace selectors.
+# Allow AWS ALB to access the frontend
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-alb-to-frontend
   namespace: roboshop
 spec:
-  podSelector: { matchLabels: { app: frontend } }
-  policyTypes: [Ingress]
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
   ingress:
     - from:
-        - ipBlock: { cidr: 0.0.0.0/0 }
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
-        - { protocol: TCP, port: 8080 }
+        - protocol: TCP
+          port: 8080
 ---
+# Allow AWS ALB to access backend APIs directly
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-frontend-to-services
+  name: allow-alb-to-backend
   namespace: roboshop
 spec:
   podSelector:
     matchExpressions:
-      - { key: app, operator: In, values: [catalogue, user, cart, shipping, payment] }
-  policyTypes: [Ingress]
+      - key: app
+        operator: In
+        values:
+          - catalogue
+          - user
+          - cart
+          - shipping
+          - payment
+  policyTypes:
+    - Ingress
   ingress:
     - from:
-        - podSelector: { matchLabels: { app: frontend } }
-        - podSelector: { matchLabels: { app: cart } }
-        - podSelector: { matchLabels: { app: shipping } }
-        - podSelector: { matchLabels: { app: payment } }
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
-        - { protocol: TCP, port: 8080 }
+        - protocol: TCP
+          port: 8080
 ---
+# Allow internal microservice communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-service-to-service
+  namespace: roboshop
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - catalogue
+          - user
+          - cart
+          - shipping
+          - payment
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - catalogue
+                  - user
+                  - cart
+                  - shipping
+                  - payment
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# Allow backend services to access databases
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -68,15 +121,33 @@ metadata:
 spec:
   podSelector:
     matchExpressions:
-      - { key: app, operator: In, values: [mongodb, mysql, redis, rabbitmq] }
-  policyTypes: [Ingress]
+      - key: app
+        operator: In
+        values:
+          - mongodb
+          - mysql
+          - redis
+          - rabbitmq
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
             matchExpressions:
-              - { key: app, operator: In, values: [catalogue, user, cart, shipping, payment] }
+              - key: app
+                operator: In
+                values:
+                  - catalogue
+                  - user
+                  - cart
+                  - shipping
+                  - payment
       ports:
-        - { protocol: TCP, port: 27017 }
-        - { protocol: TCP, port: 3306 }
-        - { protocol: TCP, port: 6379 }
-        - { protocol: TCP, port: 5672 }
+        - protocol: TCP
+          port: 27017
+        - protocol: TCP
+          port: 3306
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 5672
