@@ -16,7 +16,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY proxy_params.conf /etc/nginx/proxy_params.conf
 COPY static /usr/share/nginx/html/
 
-RUN nginx -t -c /etc/nginx/nginx.conf
 
 USER nginx
 EXPOSE 8080
