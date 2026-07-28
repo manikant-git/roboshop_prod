@@ -49,7 +49,7 @@ spec:
           labelSelector: { matchLabels: { app: catalogue } }
       containers:
         - name: catalogue
-          image: joindevops/catalogue:2.0.0
+          image: devopman/catalogue:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           env:
@@ -120,7 +120,7 @@ spec:
           labelSelector: { matchLabels: { app: user } }
       containers:
         - name: user
-          image: joindevops/user:2.0.0
+          image: devopman/user:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           env:
@@ -196,7 +196,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: cart
-          image: joindevops/cart:2.0.0
+          image:  devopman/cart:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
@@ -259,7 +259,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: shipping
-          image: joindevops/shipping:2.0.0
+          image: devopman/shipping:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
@@ -325,7 +325,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: payment
-          image: joindevops/payment:2.0.0
+          image: devopman/payment:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
