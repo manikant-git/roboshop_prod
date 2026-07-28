@@ -39,6 +39,7 @@ const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 const httpLogger = pinoHttp({ logger });
 
 const app = express();
+const router = express.Router();
 
 app.use(httpLogger);
 
@@ -82,7 +83,7 @@ app.get('/metrics', async (req, res) => {
 });
 
 // get cart with id
-app.get('/cart/:id', async (req, res) => {
+router.get('/cart/:id', async (req, res) => {
     try {
         const data = await redisClient.get(req.params.id);
         if (data == null) {
@@ -98,7 +99,7 @@ app.get('/cart/:id', async (req, res) => {
 });
 
 // delete cart with id
-app.delete('/cart/:id', async (req, res) => {
+router.delete('/cart/:id', async (req, res) => {
     try {
         const removed = await redisClient.del(req.params.id);
         if (removed === 1) {
@@ -113,7 +114,7 @@ app.delete('/cart/:id', async (req, res) => {
 });
 
 // rename cart i.e. at login
-app.get('/rename/:from/:to', async (req, res) => {
+router.get('/rename/:from/:to', async (req, res) => {
     try {
         const data = await redisClient.get(req.params.from);
         if (data == null) {
@@ -130,7 +131,7 @@ app.get('/rename/:from/:to', async (req, res) => {
 });
 
 // update/create cart
-app.get('/add/:id/:sku/:qty', async (req, res) => {
+router.get('/add/:id/:sku/:qty', async (req, res) => {
     const qty = parseInt(req.params.qty, 10);
     if (isNaN(qty)) {
         req.log.warn('quantity not a number');
@@ -182,7 +183,7 @@ app.get('/add/:id/:sku/:qty', async (req, res) => {
 });
 
 // update quantity - remove item when qty == 0
-app.get('/update/:id/:sku/:qty', async (req, res) => {
+router.get('/update/:id/:sku/:qty', async (req, res) => {
     const qty = parseInt(req.params.qty, 10);
     if (isNaN(qty)) {
         req.log.warn('quantity not a number');
@@ -223,7 +224,7 @@ app.get('/update/:id/:sku/:qty', async (req, res) => {
 });
 
 // add shipping
-app.post('/shipping/:id', async (req, res) => {
+router.post('/shipping/:id', async (req, res) => {
     const shipping = req.body;
     if (shipping.distance === undefined || shipping.cost === undefined || shipping.location === undefined) {
         req.log.warn({ shipping }, 'shipping data missing');
@@ -280,6 +281,10 @@ function calcTax(total) {
     // tax @ 20%
     return total - (total / 1.2);
 }
+
+// Register cart routes
+app.use(router);
+app.use('/api/cart', router);
 
 async function getProduct(sku) {
     const url = `http://${catalogueHost}:${cataloguePort}/product/${encodeURIComponent(sku)}`;
