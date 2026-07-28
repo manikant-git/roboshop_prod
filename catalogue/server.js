@@ -182,7 +182,7 @@ function mongoLoop() {
 }
 
 // Register catalogue routes
-app.use('/', router);
+app.use(router);
 app.use('/api/catalogue', router);
 
 mongoLoop();
