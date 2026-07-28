@@ -201,6 +201,16 @@ spec:
           ports: [{ name: http, containerPort: 8080 }]
           envFrom:
             - configMapRef: { name: roboshop-config }
+          env:
+            # Explicit override: Kubernetes auto-injects a Docker-links-style
+            # REDIS_PORT=tcp://<clusterIP>:6379 env var for the "redis" Service
+            # in this namespace. That collides with the app's own REDIS_PORT
+            # (which it expects as a plain number) and causes
+            # "ERR_SOCKET_BAD_PORT: Received type number (NaN)" on connect.
+            # An explicit env entry here takes precedence over envFrom, so
+            # this pins REDIS_PORT to a valid plain port number.
+            - name: REDIS_PORT
+              value: "6379"
           resources:
             requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 512Mi }
