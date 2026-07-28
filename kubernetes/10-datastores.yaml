@@ -36,7 +36,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: mongodb
-          image: joindevops/mongodb:2.0.0
+          image:  devopman/mongodb:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: mongo, containerPort: 27017 }]
           resources:
@@ -98,7 +98,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: mysql
-          image: joindevops/mysql:2.0.0
+          image: devopman/mysql:2.0.0
           imagePullPolicy: IfNotPresent
           ports: [{ name: mysql, containerPort: 3306 }]
           env:
@@ -163,7 +163,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: redis
-          image: redis:7.4-alpine
+          image:  redis:7.4-alpine
           imagePullPolicy: IfNotPresent
           args: ["--appendonly", "yes"]
           ports: [{ name: redis, containerPort: 6379 }]
