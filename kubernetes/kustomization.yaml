@@ -1,5 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 namespace: roboshop
 
 commonLabels:
@@ -18,18 +19,33 @@ resources:
 
 images:
   - name: joindevops/catalogue
+    newName: devopman/catalogue
     newTag: 2.0.0
+
   - name: joindevops/user
+    newName: devopman/user
     newTag: 2.0.0
+
   - name: joindevops/cart
+    newName: devopman/cart
     newTag: 2.0.0
+
   - name: joindevops/shipping
+    newName: devopman/shipping
     newTag: 2.0.0
+
   - name: joindevops/payment
+    newName: devopman/payment
     newTag: 2.0.0
+
   - name: joindevops/frontend
-    newTag: 2.0.0
+    newName: devopman/frontend
+    newTag: 2.0.1
+
   - name: joindevops/mongodb
+    newName: devopman/mongodb
     newTag: 2.0.0
+
   - name: joindevops/mysql
+    newName: devopman/mysql
     newTag: 2.0.0
