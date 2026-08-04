@@ -4,10 +4,13 @@ metadata:
   name: {{ include "catalogue.fullname" . }}
   labels:
     {{- include "catalogue.labels" . | nindent 4 }}
+
 spec:
   type: {{ .Values.service.type }}
+
   selector:
     {{- include "catalogue.selectorLabels" . | nindent 4 }}
+
   ports:
     - name: http
       port: {{ .Values.service.port }}
