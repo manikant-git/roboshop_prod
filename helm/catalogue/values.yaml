@@ -10,7 +10,7 @@ service:
   port: 8080
 
 serviceAccount:
-  create: true
+  create: false
   name: roboshop
   automount: false
 
