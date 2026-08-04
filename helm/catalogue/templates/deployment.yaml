@@ -4,9 +4,11 @@ metadata:
   name: {{ include "catalogue.fullname" . }}
   labels:
     {{- include "catalogue.labels" . | nindent 4 }}
+
 spec:
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: 5
+
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -23,14 +25,10 @@ spec:
         {{- include "catalogue.selectorLabels" . | nindent 8 }}
 
     spec:
-      serviceAccountName: {{ include "catalogue.serviceAccountName" . }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
 
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        fsGroup: 10001
-        seccompProfile:
-          type: RuntimeDefault
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
 
       topologySpreadConstraints:
         - maxSkew: 1
@@ -41,14 +39,14 @@ spec:
               {{- include "catalogue.selectorLabels" . | nindent 14 }}
 
       containers:
-        - name: {{ .Chart.Name }}
+        - name: catalogue
 
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ .Values.service.port }}
 
           env:
             - name: MONGO_URL
@@ -67,37 +65,19 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
 
           startupProbe:
-            httpGet:
-              path: /health
-              port: http
-            failureThreshold: 30
-            periodSeconds: 2
+            {{- toYaml .Values.startupProbe | nindent 12 }}
 
           readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            periodSeconds: 10
-            timeoutSeconds: 3
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
 
           livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            periodSeconds: 20
-            timeoutSeconds: 3
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
 
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
+            {{- toYaml .Values.securityContext | nindent 12 }}
 
           volumeMounts:
-            - name: tmp
-              mountPath: /tmp
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
 
       volumes:
-        - name: tmp
-          emptyDir: {}
+        {{- toYaml .Values.volumes | nindent 8 }}
