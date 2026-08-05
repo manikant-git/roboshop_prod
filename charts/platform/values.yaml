@@ -128,7 +128,7 @@ ingress:
   name: roboshop
   className: alb
   ingressClass:
-    create: true
+    create: false
     name: alb
     controller: ingress.k8s.aws/alb
   alb:
