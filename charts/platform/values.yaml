@@ -6,7 +6,7 @@ environment: base
 namespace: roboshop
 
 namespaceResource:
-  create: true
+  create: false
   labels:
     name: roboshop
   annotations: {}
