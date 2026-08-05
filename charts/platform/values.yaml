@@ -84,6 +84,7 @@ secrets:
   mode: external-secrets
 
   externalSecrets:
+    region: ap-south-1
     secretStoreRef:
       name: aws-secretsmanager
       kind: ClusterSecretStore
