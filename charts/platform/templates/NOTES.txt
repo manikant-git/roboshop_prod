@@ -1,0 +1,13 @@
+Roboshop platform layer installed into namespace: {{ include "platform.namespace" . }}
+
+  Namespace / ResourceQuota / LimitRange : {{ .Values.namespaceResource.create }}
+  StorageClass                            : {{ .Values.storageClass.name }} ({{ .Values.storageClass.enabled }})
+  Shared ConfigMap                        : {{ .Values.sharedConfig.name }}
+  Secret delivery mode                    : {{ .Values.secrets.mode }} -> Secret/{{ .Values.secrets.name }}
+  ALB Ingress                             : {{ (first .Values.ingress.hosts).host }}
+  Baseline NetworkPolicies                : {{ .Values.networkPolicies.enabled }}
+
+Install the microservice charts AFTER this chart (ArgoCD sync waves handle this
+automatically). Verify with:
+
+  kubectl -n {{ include "platform.namespace" . }} get cm,secret,netpol,ingress

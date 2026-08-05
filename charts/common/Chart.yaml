@@ -1,0 +1,10 @@
+apiVersion: v2
+name: common
+description: Roboshop platform library chart - reusable templates for all Roboshop workloads
+type: library
+version: 1.0.0
+appVersion: "1.0.0"
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+keywords: [library, common, roboshop]

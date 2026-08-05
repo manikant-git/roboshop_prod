@@ -1,0 +1,16 @@
+apiVersion: v2
+name: user
+description: Roboshop user API (Node.js) - registration, login and JWT issuance
+type: application
+version: 1.0.0
+appVersion: "2.0.1"
+keywords: [roboshop, user]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: application
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"

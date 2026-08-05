@@ -1,0 +1,16 @@
+apiVersion: v2
+name: mysql
+description: Roboshop MySQL - shipping relational store (seeded image)
+type: application
+version: 1.0.0
+appVersion: "2.0.0"
+keywords: [roboshop, mysql]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: data
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"

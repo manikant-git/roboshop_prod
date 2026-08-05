@@ -1,0 +1,80 @@
+# platform - qa overrides.
+environment: qa
+namespace: roboshop-qa
+
+namespaceResource:
+  create: true
+  labels:
+    name: roboshop-qa
+    roboshop.io/environment: qa
+
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "6"
+    requests.memory: 10Gi
+    limits.cpu: "12"
+    limits.memory: 20Gi
+    persistentvolumeclaims: "10"
+
+storageClass:
+  enabled: false   # cluster-scoped: created once per cluster
+  name: gp3
+
+sharedConfig:
+  enabled: true
+  data:
+    NODE_ENV: "development"
+
+secrets:
+  mode: external-secrets
+  externalSecrets:
+    remoteKey: roboshop/qa/app
+    refreshInterval: 1h
+
+ingress:
+  enabled: true
+  ingressClass:
+    create: false   # cluster-scoped: created once per cluster
+  alb:
+    loadBalancerName: roboshop-qa-alb
+    groupName: roboshop-qa
+    scheme: internet-facing
+    listenPorts: '[{"HTTP":80}]'
+    certificateArn: ""
+    sslRedirect: ""
+    wafv2AclArn: ""
+    tags:
+      Project: roboshop
+      Environment: qa
+      ManagedBy: helm
+  hosts:
+    - host: qa.shop.streenzo.online
+      paths:
+        - path: /api/catalogue
+          pathType: Prefix
+          serviceName: catalogue
+          servicePort: 8080
+        - path: /api/user
+          pathType: Prefix
+          serviceName: user
+          servicePort: 8080
+        - path: /api/cart
+          pathType: Prefix
+          serviceName: cart
+          servicePort: 8080
+        - path: /api/payment
+          pathType: Prefix
+          serviceName: payment
+          servicePort: 8080
+        - path: /api/shipping
+          pathType: Prefix
+          serviceName: shipping
+          servicePort: 8080
+        - path: /
+          pathType: Prefix
+          serviceName: frontend
+          servicePort: 80
+
+networkPolicies:
+  enabled: true

@@ -1,0 +1,164 @@
+{{- if .Values.networkPolicies.enabled }}
+{{- $ns := include "platform.namespace" . }}
+{{- $labels := include "platform.labels" . }}
+{{- if .Values.networkPolicies.defaultDenyIngress }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: {{ $ns }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+{{- end }}
+{{- if .Values.networkPolicies.allowDnsEgress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: {{ $ns }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector: {}
+{{- end }}
+{{- if .Values.networkPolicies.albToFrontend }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alb-to-frontend
+  namespace: {{ $ns }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: {{ .Values.networkPolicies.albSourceCidr }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicies.frontendPort }}
+{{- end }}
+{{- if .Values.networkPolicies.albToBackend }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alb-to-backend
+  namespace: {{ $ns }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          {{- toYaml .Values.networkPolicies.applicationServices | nindent 10 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: {{ .Values.networkPolicies.albSourceCidr }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicies.backendPort }}
+{{- end }}
+{{- if .Values.networkPolicies.serviceToService }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-service-to-service
+  namespace: {{ $ns }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          {{- toYaml .Values.networkPolicies.applicationServices | nindent 10 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  {{- toYaml .Values.networkPolicies.applicationServices | nindent 18 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicies.backendPort }}
+{{- end }}
+{{- if .Values.networkPolicies.servicesToDatastores }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-services-to-datastores
+  namespace: {{ $ns }}
+  labels:
+    {{- $labels | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-7"
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          {{- toYaml .Values.networkPolicies.datastores | nindent 10 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  {{- toYaml .Values.networkPolicies.applicationServices | nindent 18 }}
+      ports:
+        {{- range .Values.networkPolicies.datastorePorts }}
+        - protocol: TCP
+          port: {{ . }}
+        {{- end }}
+{{- end }}
+{{- end }}

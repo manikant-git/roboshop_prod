@@ -1,0 +1,177 @@
+# ---------------------------------------------------------------------------
+# frontend - Roboshop frontend (nginx) - static SPA, ALB target group
+# ---------------------------------------------------------------------------
+enabled: true
+nameOverride: ""
+fullnameOverride: "frontend"   # keep the pre-Helm DNS name stable
+useReleaseNamePrefix: false
+namespace: roboshop
+environment: base
+component: frontend
+workloadKind: Deployment
+
+image:
+  registry: ""
+  repository: devopman/frontend
+  tag: "2.0.3"
+  digest: ""
+  pullPolicy: Always
+imagePullSecrets: []
+
+replicaCount: 2
+revisionHistoryLimit: 5
+rollingUpdate:
+  maxUnavailable: 0
+  maxSurge: 1
+terminationGracePeriodSeconds: 30
+
+serviceAccount:
+  create: false          # provided by the platform chart
+  name: roboshop
+  automount: false
+  annotations: {}
+
+# Security posture is fixed by the common library (non-root, no privilege
+# escalation, all capabilities dropped, RuntimeDefault seccomp). Only the
+# image-specific UID/GID are configurable.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+
+containerPorts:
+  - name: http
+    containerPort: 8080
+
+# Plain environment variables (service specific application config).
+env: {}
+
+# Bulk import of the shared platform ConfigMap / Secret.
+envFrom: []
+
+# Individual keys pulled from the shared platform ConfigMap.
+envFromConfigMapKeys: []
+
+# Individual keys pulled from the platform-managed Secret. The Secret itself
+# is produced by External Secrets / CSI from AWS Secrets Manager - never Git.
+envFromSecretKeys: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: "300m"
+    memory: 256Mi
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: http
+  failureThreshold: 20
+  periodSeconds: 2
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 3
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  periodSeconds: 20
+  timeoutSeconds: 3
+
+lifecycle:
+  preStop:
+    exec:
+      command: ["/bin/sh", "-c", "sleep 5; nginx -s quit"]
+
+volumes:
+  - name: cache
+    emptyDir: {}
+  - name: run
+    emptyDir: {}
+  - name: logs
+    emptyDir: {}
+volumeMounts:
+  - name: cache
+    mountPath: /var/cache/nginx
+  - name: run
+    mountPath: /run
+  - name: logs
+    mountPath: /var/log/nginx
+
+persistence:
+  enabled: false
+
+service:
+  enabled: true
+  type: ClusterIP
+  headless: false
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/target-group-attributes: >-
+      deregistration_delay.timeout_seconds=30,
+      stickiness.enabled=false
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: null
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Per-service NetworkPolicy. Baseline namespace policies live in the
+# platform chart; enable this only for service specific rules.
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+configMap:
+  enabled: false
+  name: ""
+  data: {}
+  files: {}
+
+externalSecret:
+  enabled: false
+secretsStoreCSI:
+  enabled: false
+ingress:
+  enabled: false          # the shared ALB Ingress lives in the platform chart
+
+topologySpreadConstraints:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+podLabels: {}
+podAnnotations: {}
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "2"
+extraLabels: {}
+

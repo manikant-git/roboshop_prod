@@ -1,0 +1,4 @@
+ci/_rendered/
+dist/
+charts/*/charts/
+charts/*/Chart.lock

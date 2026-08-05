@@ -1,0 +1,16 @@
+apiVersion: v2
+name: catalogue
+description: Roboshop catalogue API (Node.js) - product catalogue backed by MongoDB
+type: application
+version: 1.0.0
+appVersion: "2.0.1"
+keywords: [roboshop, catalogue]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: application
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"

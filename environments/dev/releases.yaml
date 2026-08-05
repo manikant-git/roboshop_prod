@@ -1,0 +1,37 @@
+# Ordered release list for the dev environment (mirrors ArgoCD sync waves).
+environment: dev
+namespace: roboshop-dev
+releases:
+  - name: platform
+    chart: charts/platform
+    wave: -1
+  - name: mongodb
+    chart: charts/mongodb
+    wave: 0
+  - name: mysql
+    chart: charts/mysql
+    wave: 0
+  - name: redis
+    chart: charts/redis
+    wave: 0
+  - name: rabbitmq
+    chart: charts/rabbitmq
+    wave: 0
+  - name: catalogue
+    chart: charts/catalogue
+    wave: 1
+  - name: user
+    chart: charts/user
+    wave: 1
+  - name: cart
+    chart: charts/cart
+    wave: 1
+  - name: shipping
+    chart: charts/shipping
+    wave: 1
+  - name: payment
+    chart: charts/payment
+    wave: 1
+  - name: frontend
+    chart: charts/frontend
+    wave: 2

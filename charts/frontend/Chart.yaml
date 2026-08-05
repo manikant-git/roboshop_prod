@@ -1,0 +1,16 @@
+apiVersion: v2
+name: frontend
+description: Roboshop frontend (nginx) - static SPA, ALB target group
+type: application
+version: 1.0.0
+appVersion: "2.0.3"
+keywords: [roboshop, frontend]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: application
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"

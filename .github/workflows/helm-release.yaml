@@ -1,0 +1,74 @@
+name: helm-release
+
+# Promotes a chart version by tagging the repository and publishing signed,
+# immutable chart packages. Deployment itself is performed by ArgoCD, which
+# reconciles Git - this workflow never runs `helm upgrade` against a cluster.
+
+on:
+  push:
+    tags:
+      - "roboshop-v*"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to promote
+        type: choice
+        options: [dev, qa, staging, production]
+        required: true
+
+env:
+  HELM_VERSION: v3.16.3
+  WORKDIR: roboshop-helm
+
+jobs:
+  gate:
+    name: Pre-release gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - run: ./ci/lint.sh
+      - run: ./ci/template.sh
+
+  publish:
+    name: Publish charts to OCI
+    needs: gate
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'production' }}
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: ECR login
+        run: |
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
+            | helm registry login --username AWS --password-stdin "${{ vars.ECR_REGISTRY }}"
+      - name: Package and push
+        env:
+          OCI_REGISTRY: oci://${{ vars.ECR_REGISTRY }}/roboshop
+        run: ./ci/package.sh
+      - name: Summary
+        run: |
+          {
+            echo "### Roboshop charts published"
+            echo
+            ls -1 dist/*.tgz | sed 's|dist/|- |'
+            echo
+            echo "ArgoCD will reconcile the target environment on the next sync."
+          } >> "$GITHUB_STEP_SUMMARY"

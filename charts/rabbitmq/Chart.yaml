@@ -1,0 +1,16 @@
+apiVersion: v2
+name: rabbitmq
+description: Roboshop RabbitMQ - order message broker consumed by the dispatch flow
+type: application
+version: 1.0.0
+appVersion: "3-management-alpine"
+keywords: [roboshop, rabbitmq]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: data
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"

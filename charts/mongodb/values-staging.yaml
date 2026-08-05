@@ -1,0 +1,16 @@
+# mongodb - staging overrides. Only values that differ from values.yaml.
+environment: staging
+namespace: roboshop-staging
+
+image:
+  tag: "2.0.0"
+
+persistence:
+  storageClass: gp3
+  size: 20Gi
+
+nodeSelector: {}
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+  roboshop.io/environment: "staging"

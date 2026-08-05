@@ -1,0 +1,12 @@
+{{- if and .Values.ingress.enabled .Values.ingress.ingressClass.create }}
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: {{ .Values.ingress.ingressClass.name }}
+  labels:
+    {{- include "platform.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-9"
+spec:
+  controller: {{ .Values.ingress.ingressClass.controller }}
+{{- end }}

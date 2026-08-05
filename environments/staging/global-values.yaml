@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------
+# staging environment - values shared by EVERY Roboshop chart.
+# Applied first, then the chart's own values-staging.yaml.
+#   helm upgrade --install <svc> charts/<svc> \
+#     -f environments/staging/global-values.yaml \
+#     -f charts/<svc>/values-staging.yaml
+# ---------------------------------------------------------------------------
+environment: staging
+namespace: roboshop-staging
+
+image:
+  registry: ""          # set to <acct>.dkr.ecr.<region>.amazonaws.com for ECR
+
+commonAnnotations:
+  roboshop.io/environment: "staging"
+  roboshop.io/managed-by: "platform-engineering"
+
+extraLabels:
+  roboshop.io/environment: staging

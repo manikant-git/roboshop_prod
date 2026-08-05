@@ -1,0 +1,152 @@
+# ---------------------------------------------------------------------------
+# mysql - Roboshop MySQL - shipping relational store (seeded image)
+# ---------------------------------------------------------------------------
+enabled: true
+nameOverride: ""
+fullnameOverride: "mysql"   # keep the pre-Helm DNS name stable
+useReleaseNamePrefix: false
+namespace: roboshop
+environment: base
+component: database
+workloadKind: StatefulSet
+
+image:
+  registry: ""
+  repository: devopman/mysql
+  tag: "2.0.0"
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 1
+revisionHistoryLimit: 5
+podManagementPolicy: OrderedReady
+terminationGracePeriodSeconds: 30
+
+serviceAccount:
+  create: false
+  name: default
+  automount: false
+  annotations: {}
+
+# Security posture is fixed by the common library (non-root, no privilege
+# escalation, all capabilities dropped, RuntimeDefault seccomp). Only the
+# image-specific UID/GID are configurable.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  fsGroup: 999
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+containerPorts:
+  - name: mysql
+    containerPort: 3306
+
+# Plain environment variables (service specific application config).
+env: {}
+
+# Bulk import of the shared platform ConfigMap / Secret.
+envFrom: []
+
+# Individual keys pulled from the shared platform ConfigMap.
+envFromConfigMapKeys: []
+
+# Individual keys pulled from the platform-managed Secret. The Secret itself
+# is produced by External Secrets / CSI from AWS Secrets Manager - never Git.
+envFromSecretKeys:
+  - name: MYSQL_ROOT_PASSWORD
+    secret: roboshop-secrets
+    key: MYSQL_ROOT_PASSWORD
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+readinessProbe:
+  tcpSocket:
+    port: 3306
+  initialDelaySeconds: 20
+  periodSeconds: 10
+livenessProbe:
+  tcpSocket:
+    port: 3306
+  initialDelaySeconds: 60
+  periodSeconds: 20
+
+volumes: []
+volumeMounts: []
+
+persistence:
+  enabled: true
+  standalone: false        # rendered as volumeClaimTemplates
+  name: data
+  mountPath: /var/lib/mysql
+  accessModes:
+    - ReadWriteOnce
+  storageClass: gp3
+  size: 10Gi
+  existingClaim: ""
+
+service:
+  enabled: true
+  type: ClusterIP
+  headless: true
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+  annotations: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  behavior: {}
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Per-service NetworkPolicy. Baseline namespace policies live in the
+# platform chart; enable this only for service specific rules.
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+configMap:
+  enabled: false
+  name: ""
+  data: {}
+  files: {}
+
+externalSecret:
+  enabled: false
+secretsStoreCSI:
+  enabled: false
+ingress:
+  enabled: false          # the shared ALB Ingress lives in the platform chart
+
+topologySpreadConstraints:
+  enabled: false
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+podLabels: {}
+podAnnotations: {}
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+extraLabels: {}
+

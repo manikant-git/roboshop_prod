@@ -1,0 +1,90 @@
+# One Application per Roboshop chart in the qa environment.
+# Sync waves: -1 platform, 0 datastores, 1 microservices, 2 frontend.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: roboshop-qa
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - name: platform
+            chart: charts/platform
+            wave: "-1"
+          - name: mongodb
+            chart: charts/mongodb
+            wave: "0"
+          - name: mysql
+            chart: charts/mysql
+            wave: "0"
+          - name: redis
+            chart: charts/redis
+            wave: "0"
+          - name: rabbitmq
+            chart: charts/rabbitmq
+            wave: "0"
+          - name: catalogue
+            chart: charts/catalogue
+            wave: "1"
+          - name: user
+            chart: charts/user
+            wave: "1"
+          - name: cart
+            chart: charts/cart
+            wave: "1"
+          - name: shipping
+            chart: charts/shipping
+            wave: "1"
+          - name: payment
+            chart: charts/payment
+            wave: "1"
+          - name: frontend
+            chart: charts/frontend
+            wave: "2"
+  template:
+    metadata:
+      name: 'roboshop-qa-{{.name}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: '{{.wave}}'
+      labels:
+        roboshop.io/environment: qa
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: roboshop
+      source:
+        repoURL: https://github.com/<org>/roboshop-helm.git
+        targetRevision: HEAD
+        path: '{{.chart}}'
+        helm:
+          releaseName: '{{.name}}'
+          valueFiles:
+            - values.yaml
+            - values-qa.yaml
+            - ../../environments/qa/global-values.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: roboshop-qa
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - ApplyOutOfSyncOnly=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m
+      revisionHistoryLimit: 10
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas          # owned by the HPA, not by Git

@@ -1,0 +1,23 @@
+# mongodb - production overrides. Only values that differ from values.yaml.
+environment: production
+namespace: roboshop
+
+image:
+  tag: "2.0.0"
+  pullPolicy: IfNotPresent
+
+persistence:
+  storageClass: gp3
+  size: 100Gi
+
+nodeSelector:
+  workload: roboshop
+tolerations:
+  - key: workload
+    operator: Equal
+    value: roboshop
+    effect: NoSchedule
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+  roboshop.io/environment: "production"

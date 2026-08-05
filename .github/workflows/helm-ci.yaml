@@ -1,0 +1,127 @@
+name: helm-ci
+
+on:
+  pull_request:
+    paths:
+      - "roboshop-helm/**"
+  push:
+    branches: [main]
+    paths:
+      - "roboshop-helm/**"
+
+env:
+  HELM_VERSION: v3.16.3
+  KUBE_VERSION: "1.30.0"
+  WORKDIR: roboshop-helm
+
+jobs:
+  lint:
+    name: helm lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: helm lint (strict, all charts, all environments)
+        run: ./ci/lint.sh
+
+  template-and-validate:
+    name: helm template + kubeconform
+    runs-on: ubuntu-latest
+    needs: lint
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Install kubeconform
+        run: |
+          curl -sSLo /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/
+      - name: Render all charts
+        run: ./ci/template.sh
+      - name: Validate against Kubernetes ${{ env.KUBE_VERSION }} schemas
+        run: ./ci/validate.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rendered-manifests
+          path: ${{ env.WORKDIR }}/ci/_rendered
+          retention-days: 7
+
+  security:
+    name: Checkov policy scan
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install checkov
+      - name: Render all charts
+        run: ./ci/template.sh
+      - name: Checkov
+        run: ./ci/security-scan.sh
+      - name: Checkov SARIF
+        if: always()
+        run: |
+          checkov --directory ci/_rendered --framework kubernetes \
+            --config-file ci/checkov.yaml --output sarif --output-file-path . || true
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ env.WORKDIR }}/results.sarif
+        continue-on-error: true
+
+  package:
+    name: package + publish (OCI)
+    runs-on: ubuntu-latest
+    needs: [template-and-validate, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.WORKDIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Login to Amazon ECR (OCI Helm registry)
+        run: |
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
+            | helm registry login --username AWS --password-stdin \
+              "${{ vars.ECR_REGISTRY }}"
+      - name: Package and push charts
+        env:
+          OCI_REGISTRY: oci://${{ vars.ECR_REGISTRY }}/roboshop
+        run: ./ci/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: helm-packages
+          path: ${{ env.WORKDIR }}/dist/*.tgz

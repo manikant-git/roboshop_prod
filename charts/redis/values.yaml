@@ -1,0 +1,153 @@
+# ---------------------------------------------------------------------------
+# redis - Roboshop Redis - cart session and cache store
+# ---------------------------------------------------------------------------
+enabled: true
+nameOverride: ""
+fullnameOverride: "redis"   # keep the pre-Helm DNS name stable
+useReleaseNamePrefix: false
+namespace: roboshop
+environment: base
+component: cache
+workloadKind: StatefulSet
+
+image:
+  registry: ""
+  repository: redis
+  tag: "7.4-alpine"
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 1
+revisionHistoryLimit: 5
+podManagementPolicy: OrderedReady
+terminationGracePeriodSeconds: 30
+
+serviceAccount:
+  create: false
+  name: default
+  automount: false
+  annotations: {}
+
+# Security posture is fixed by the common library (non-root, no privilege
+# escalation, all capabilities dropped, RuntimeDefault seccomp). Only the
+# image-specific UID/GID are configurable.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  fsGroup: 999
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+
+containerPorts:
+  - name: redis
+    containerPort: 6379
+
+args:
+  - "--appendonly"
+  - "yes"
+
+# Plain environment variables (service specific application config).
+env: {}
+
+# Bulk import of the shared platform ConfigMap / Secret.
+envFrom: []
+
+# Individual keys pulled from the shared platform ConfigMap.
+envFromConfigMapKeys: []
+
+# Individual keys pulled from the platform-managed Secret. The Secret itself
+# is produced by External Secrets / CSI from AWS Secrets Manager - never Git.
+envFromSecretKeys: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: "500m"
+    memory: 512Mi
+
+readinessProbe:
+  exec:
+    command: ["redis-cli", "ping"]
+  initialDelaySeconds: 5
+  periodSeconds: 10
+livenessProbe:
+  tcpSocket:
+    port: 6379
+  initialDelaySeconds: 20
+  periodSeconds: 20
+
+volumes: []
+volumeMounts: []
+
+persistence:
+  enabled: true
+  standalone: false        # rendered as volumeClaimTemplates
+  name: data
+  mountPath: /data
+  accessModes:
+    - ReadWriteOnce
+  storageClass: gp3
+  size: 5Gi
+  existingClaim: ""
+
+service:
+  enabled: true
+  type: ClusterIP
+  headless: false
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  annotations: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  behavior: {}
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Per-service NetworkPolicy. Baseline namespace policies live in the
+# platform chart; enable this only for service specific rules.
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+configMap:
+  enabled: false
+  name: ""
+  data: {}
+  files: {}
+
+externalSecret:
+  enabled: false
+secretsStoreCSI:
+  enabled: false
+ingress:
+  enabled: false          # the shared ALB Ingress lives in the platform chart
+
+topologySpreadConstraints:
+  enabled: false
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+podLabels: {}
+podAnnotations: {}
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+extraLabels: {}
+

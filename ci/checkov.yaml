@@ -1,0 +1,13 @@
+# Checkov configuration for Roboshop rendered manifests.
+soft-fail: false
+skip-check:
+  # Roboshop runs in-cluster datastores whose images require a writable root fs
+  # (mysql/mongodb/rabbitmq data + socket paths). Stateless services all set
+  # readOnlyRootFilesystem=true, which is enforced by the common library chart.
+  - CKV_K8S_22
+  # Image digest pinning is enforced at release time by the CD pipeline, which
+  # resolves tags to digests; charts keep human-readable tags in Git.
+  - CKV_K8S_43
+framework:
+  - kubernetes
+compact: true

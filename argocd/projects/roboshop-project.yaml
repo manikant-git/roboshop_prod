@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: roboshop
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Roboshop microservices platform
+  sourceRepos:
+    - https://github.com/<org>/roboshop-helm.git
+  destinations:
+    - namespace: 'roboshop*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: storage.k8s.io
+      kind: StorageClass
+    - group: networking.k8s.io
+      kind: IngressClass
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  orphanedResources:
+    warn: true
+  roles:
+    - name: read-only
+      policies:
+        - p, proj:roboshop:read-only, applications, get, roboshop/*, allow
+    - name: deployer
+      policies:
+        - p, proj:roboshop:deployer, applications, sync, roboshop/*, allow

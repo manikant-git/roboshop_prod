@@ -1,0 +1,187 @@
+# ---------------------------------------------------------------------------
+# rabbitmq - Roboshop RabbitMQ - order message broker consumed by the dispatch flow
+# ---------------------------------------------------------------------------
+enabled: true
+nameOverride: ""
+fullnameOverride: "rabbitmq"   # keep the pre-Helm DNS name stable
+useReleaseNamePrefix: false
+namespace: roboshop
+environment: base
+component: messaging
+workloadKind: StatefulSet
+
+image:
+  registry: ""
+  repository: rabbitmq
+  tag: "3-management-alpine"
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 1
+revisionHistoryLimit: 5
+podManagementPolicy: OrderedReady
+terminationGracePeriodSeconds: 30
+
+serviceAccount:
+  create: false
+  name: default
+  automount: false
+  annotations: {}
+
+# Security posture is fixed by the common library (non-root, no privilege
+# escalation, all capabilities dropped, RuntimeDefault seccomp). Only the
+# image-specific UID/GID are configurable.
+podSecurityContext:
+  runAsNonRoot: false     # rabbitmq init container must chown as root
+  fsGroup: 999
+  fsGroupChangePolicy: Always
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+  runAsUser: 999
+  runAsGroup: 999
+
+containerPorts:
+  - name: amqp
+    containerPort: 5672
+  - name: http
+    containerPort: 15672
+
+initContainers:
+  - name: volume-permissions
+    image: busybox:1.36
+    imagePullPolicy: IfNotPresent
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /var/lib/rabbitmq
+        chown -R 999:999 /var/lib/rabbitmq
+        chmod 700 /var/lib/rabbitmq
+        if [ -f /var/lib/rabbitmq/.erlang.cookie ]; then
+          chown 999:999 /var/lib/rabbitmq/.erlang.cookie
+          chmod 400 /var/lib/rabbitmq/.erlang.cookie
+        fi
+    securityContext:
+      runAsUser: 0
+    volumeMounts:
+      - name: data
+        mountPath: /var/lib/rabbitmq
+
+# Plain environment variables (service specific application config).
+env: {}
+
+# Bulk import of the shared platform ConfigMap / Secret.
+envFrom: []
+
+# Individual keys pulled from the shared platform ConfigMap.
+envFromConfigMapKeys: []
+
+# Individual keys pulled from the platform-managed Secret. The Secret itself
+# is produced by External Secrets / CSI from AWS Secrets Manager - never Git.
+envFromSecretKeys:
+  - name: RABBITMQ_DEFAULT_USER
+    secret: roboshop-secrets
+    key: RABBITMQ_DEFAULT_USER
+  - name: RABBITMQ_DEFAULT_PASS
+    secret: roboshop-secrets
+    key: RABBITMQ_DEFAULT_PASS
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+readinessProbe:
+  exec:
+    command: ["rabbitmq-diagnostics", "-q", "ping"]
+  initialDelaySeconds: 20
+  periodSeconds: 15
+  timeoutSeconds: 10
+  failureThreshold: 5
+livenessProbe:
+  exec:
+    command: ["rabbitmq-diagnostics", "-q", "status"]
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 5
+
+volumes: []
+volumeMounts: []
+
+persistence:
+  enabled: true
+  standalone: false        # rendered as volumeClaimTemplates
+  name: data
+  mountPath: /var/lib/rabbitmq
+  accessModes:
+    - ReadWriteOnce
+  storageClass: gp3
+  size: 5Gi
+  existingClaim: ""
+
+service:
+  enabled: true
+  type: ClusterIP
+  headless: false
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: http
+      port: 15672
+      targetPort: 15672
+  annotations: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  behavior: {}
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Per-service NetworkPolicy. Baseline namespace policies live in the
+# platform chart; enable this only for service specific rules.
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+configMap:
+  enabled: false
+  name: ""
+  data: {}
+  files: {}
+
+externalSecret:
+  enabled: false
+secretsStoreCSI:
+  enabled: false
+ingress:
+  enabled: false          # the shared ALB Ingress lives in the platform chart
+
+topologySpreadConstraints:
+  enabled: false
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+podLabels: {}
+podAnnotations: {}
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+extraLabels: {}
+

@@ -1,0 +1,16 @@
+# rabbitmq - staging overrides. Only values that differ from values.yaml.
+environment: staging
+namespace: roboshop-staging
+
+image:
+  tag: "3-management-alpine"
+
+persistence:
+  storageClass: gp3
+  size: 10Gi
+
+nodeSelector: {}
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+  roboshop.io/environment: "staging"

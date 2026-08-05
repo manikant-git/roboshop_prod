@@ -1,0 +1,21 @@
+{{- $name := include "common.fullname" . }}
+{{ .Chart.Name }} ({{ $name }}) deployed to namespace {{ include "common.namespace" . }}.
+
+  Workload : {{ .Values.workloadKind }}
+  Image    : {{ include "common.image" . }}
+  Replicas : {{ if .Values.autoscaling.enabled }}{{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }} (HPA){{ else }}{{ .Values.replicaCount }}{{ end }}
+{{- if .Values.service.enabled }}
+  Service  : {{ $name }}{{ range .Values.service.ports }} :{{ .port }}{{ end }}
+{{- end }}
+{{- if .Values.persistence.enabled }}
+  Storage  : {{ .Values.persistence.size }} on {{ .Values.persistence.storageClass }} at {{ .Values.persistence.mountPath }}
+{{- end }}
+
+Check rollout:
+  kubectl -n {{ include "common.namespace" . }} rollout status {{ lower .Values.workloadKind }}/{{ $name }}
+
+Tail logs:
+  kubectl -n {{ include "common.namespace" . }} logs -l app={{ $name }} --tail=100 -f
+
+Rollback:
+  helm rollback {{ .Release.Name }} -n {{ include "common.namespace" . }}

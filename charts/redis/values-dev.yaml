@@ -1,0 +1,16 @@
+# redis - dev overrides. Only values that differ from values.yaml.
+environment: dev
+namespace: roboshop-dev
+
+image:
+  tag: "7.4-alpine"
+
+persistence:
+  storageClass: gp3
+  size: 2Gi
+
+nodeSelector: {}
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+  roboshop.io/environment: "dev"

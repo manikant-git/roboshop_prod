@@ -1,0 +1,217 @@
+# ---------------------------------------------------------------------------
+# Roboshop platform chart - shared infrastructure for every environment.
+# Sync wave: -1 (installed before any microservice chart).
+# ---------------------------------------------------------------------------
+environment: base
+namespace: roboshop
+
+namespaceResource:
+  create: true
+  labels:
+    name: roboshop
+  annotations: {}
+
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "8"
+    requests.memory: 12Gi
+    limits.cpu: "16"
+    limits.memory: 24Gi
+    persistentvolumeclaims: "10"
+
+limitRange:
+  enabled: true
+  default:
+    cpu: 500m
+    memory: 512Mi
+  defaultRequest:
+    cpu: 100m
+    memory: 128Mi
+
+storageClass:
+  enabled: true
+  name: gp3
+  provisioner: ebs.csi.aws.com
+  volumeBindingMode: WaitForFirstConsumer
+  allowVolumeExpansion: true
+  reclaimPolicy: Delete
+  parameters:
+    type: gp3
+    fsType: ext4
+    encrypted: "true"
+
+# Shared ServiceAccount used by every stateless microservice (preserved from
+# the original manifests: metadata.name = roboshop).
+serviceAccount:
+  create: true
+  name: roboshop
+  automount: false
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::<account>:role/roboshop-irsa
+
+# Shared, non-secret application wiring. Service-specific configuration lives
+# in each service chart's values.yaml.
+sharedConfig:
+  enabled: true
+  name: roboshop-config
+  data:
+    MONGO_URL_CATALOGUE: "mongodb://mongodb:27017/catalogue"
+    MONGO_URL_USER: "mongodb://mongodb:27017/users"
+    REDIS_URL: "redis://redis:6379"
+    REDIS_HOST: "redis"
+    CATALOGUE_HOST: "catalogue"
+    CATALOGUE_PORT: "8080"
+    CART_HOST: "cart"
+    CART_PORT: "8080"
+    CART_ENDPOINT: "cart:8080"
+    USER_HOST: "user"
+    USER_PORT: "8080"
+    DB_HOST: "mysql"
+    AMQP_HOST: "rabbitmq"
+    ACCESS_TOKEN_TTL: "15m"
+    REFRESH_TOKEN_TTL: "7d"
+    NODE_ENV: "production"
+
+# ---------------------------------------------------------------------------
+# Secrets. NOTHING sensitive is ever committed.
+#   mode: external-secrets | csi | existing
+# ---------------------------------------------------------------------------
+secrets:
+  # Name of the Kubernetes Secret that workloads reference. It is either
+  # materialised by ESO / CSI, or created out-of-band by the platform team.
+  name: roboshop-secrets
+  mode: external-secrets
+
+  externalSecrets:
+    secretStoreRef:
+      name: aws-secretsmanager
+      kind: ClusterSecretStore
+    refreshInterval: 1h
+    # One AWS Secrets Manager secret per environment, keys mapped 1:1.
+    remoteKey: roboshop/base/app
+    keys:
+      - JWT_ACCESS_SECRET
+      - JWT_REFRESH_SECRET
+      - MYSQL_ROOT_PASSWORD
+      - AMQP_USER
+      - AMQP_PASS
+      - RABBITMQ_DEFAULT_USER
+      - RABBITMQ_DEFAULT_PASS
+
+  csi:
+    enabled: false
+    objects:
+      - objectName: roboshop/base/app
+        objectType: secretsmanager
+        jmesPath:
+          - path: JWT_ACCESS_SECRET
+            objectAlias: JWT_ACCESS_SECRET
+          - path: JWT_REFRESH_SECRET
+            objectAlias: JWT_REFRESH_SECRET
+          - path: MYSQL_ROOT_PASSWORD
+            objectAlias: MYSQL_ROOT_PASSWORD
+          - path: AMQP_USER
+            objectAlias: AMQP_USER
+          - path: AMQP_PASS
+            objectAlias: AMQP_PASS
+          - path: RABBITMQ_DEFAULT_USER
+            objectAlias: RABBITMQ_DEFAULT_USER
+          - path: RABBITMQ_DEFAULT_PASS
+            objectAlias: RABBITMQ_DEFAULT_PASS
+
+# ---------------------------------------------------------------------------
+# Shared AWS ALB Ingress (single ALB fronting the whole application).
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  name: roboshop
+  className: alb
+  ingressClass:
+    create: true
+    name: alb
+    controller: ingress.k8s.aws/alb
+  alb:
+    loadBalancerName: roboshop-alb
+    scheme: internet-facing
+    targetType: ip
+    groupName: roboshop
+    listenPorts: '[{"HTTP":80}]'
+    certificateArn: ""
+    sslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    sslRedirect: ""
+    wafv2AclArn: ""
+    healthcheck:
+      protocol: HTTP
+      path: /health
+      intervalSeconds: 15
+      timeoutSeconds: 5
+      healthyThreshold: 2
+      unhealthyThreshold: 3
+      successCodes: "200"
+    loadBalancerAttributes: >-
+      idle_timeout.timeout_seconds=60,
+      routing.http2.enabled=true,
+      routing.http.drop_invalid_header_fields.enabled=true,
+      deletion_protection.enabled=false
+    tags:
+      Project: roboshop
+      Environment: base
+  hosts:
+    - host: shop.streenzo.online
+      paths:
+        - path: /api/catalogue
+          pathType: Prefix
+          serviceName: catalogue
+          servicePort: 8080
+        - path: /api/user
+          pathType: Prefix
+          serviceName: user
+          servicePort: 8080
+        - path: /api/cart
+          pathType: Prefix
+          serviceName: cart
+          servicePort: 8080
+        - path: /api/payment
+          pathType: Prefix
+          serviceName: payment
+          servicePort: 8080
+        - path: /api/shipping
+          pathType: Prefix
+          serviceName: shipping
+          servicePort: 8080
+        - path: /
+          pathType: Prefix
+          serviceName: frontend
+          servicePort: 80
+
+# ---------------------------------------------------------------------------
+# Baseline, namespace-wide network policies (identical to the pre-Helm set).
+# ---------------------------------------------------------------------------
+networkPolicies:
+  enabled: true
+  defaultDenyIngress: true
+  allowDnsEgress: true
+  albToFrontend: true
+  albToBackend: true
+  serviceToService: true
+  servicesToDatastores: true
+  frontendPort: 8080
+  backendPort: 8080
+  albSourceCidr: 0.0.0.0/0
+  applicationServices:
+    - catalogue
+    - user
+    - cart
+    - shipping
+    - payment
+  datastores:
+    - mongodb
+    - mysql
+    - redis
+    - rabbitmq
+  datastorePorts:
+    - 27017
+    - 3306
+    - 6379
+    - 5672

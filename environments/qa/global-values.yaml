@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------
+# qa environment - values shared by EVERY Roboshop chart.
+# Applied first, then the chart's own values-qa.yaml.
+#   helm upgrade --install <svc> charts/<svc> \
+#     -f environments/qa/global-values.yaml \
+#     -f charts/<svc>/values-qa.yaml
+# ---------------------------------------------------------------------------
+environment: qa
+namespace: roboshop-qa
+
+image:
+  registry: ""          # set to <acct>.dkr.ecr.<region>.amazonaws.com for ECR
+
+commonAnnotations:
+  roboshop.io/environment: "qa"
+  roboshop.io/managed-by: "platform-engineering"
+
+extraLabels:
+  roboshop.io/environment: qa

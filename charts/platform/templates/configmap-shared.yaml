@@ -1,0 +1,15 @@
+{{- if .Values.sharedConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.sharedConfig.name }}
+  namespace: {{ include "platform.namespace" . }}
+  labels:
+    {{- include "platform.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-8"
+data:
+  {{- range $k, $v := .Values.sharedConfig.data }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+{{- end }}

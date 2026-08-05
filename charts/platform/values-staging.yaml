@@ -1,0 +1,80 @@
+# platform - staging overrides.
+environment: staging
+namespace: roboshop-staging
+
+namespaceResource:
+  create: true
+  labels:
+    name: roboshop-staging
+    roboshop.io/environment: staging
+
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "8"
+    requests.memory: 12Gi
+    limits.cpu: "16"
+    limits.memory: 24Gi
+    persistentvolumeclaims: "10"
+
+storageClass:
+  enabled: false   # cluster-scoped: created once per cluster
+  name: gp3
+
+sharedConfig:
+  enabled: true
+  data:
+    NODE_ENV: "production"
+
+secrets:
+  mode: external-secrets
+  externalSecrets:
+    remoteKey: roboshop/staging/app
+    refreshInterval: 1h
+
+ingress:
+  enabled: true
+  ingressClass:
+    create: false   # cluster-scoped: created once per cluster
+  alb:
+    loadBalancerName: roboshop-staging-alb
+    groupName: roboshop-staging
+    scheme: internet-facing
+    listenPorts: '[{"HTTP":80},{"HTTPS":443}]'
+    certificateArn: "arn:aws:acm:us-east-1:000000000000:certificate/REPLACE_ME_STAGING"
+    sslRedirect: "443"
+    wafv2AclArn: ""
+    tags:
+      Project: roboshop
+      Environment: staging
+      ManagedBy: helm
+  hosts:
+    - host: staging.shop.streenzo.online
+      paths:
+        - path: /api/catalogue
+          pathType: Prefix
+          serviceName: catalogue
+          servicePort: 8080
+        - path: /api/user
+          pathType: Prefix
+          serviceName: user
+          servicePort: 8080
+        - path: /api/cart
+          pathType: Prefix
+          serviceName: cart
+          servicePort: 8080
+        - path: /api/payment
+          pathType: Prefix
+          serviceName: payment
+          servicePort: 8080
+        - path: /api/shipping
+          pathType: Prefix
+          serviceName: shipping
+          servicePort: 8080
+        - path: /
+          pathType: Prefix
+          serviceName: frontend
+          servicePort: 80
+
+networkPolicies:
+  enabled: true

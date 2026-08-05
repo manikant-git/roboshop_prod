@@ -1,0 +1,16 @@
+# mysql - dev overrides. Only values that differ from values.yaml.
+environment: dev
+namespace: roboshop-dev
+
+image:
+  tag: "2.0.0"
+
+persistence:
+  storageClass: gp3
+  size: 5Gi
+
+nodeSelector: {}
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+  roboshop.io/environment: "dev"

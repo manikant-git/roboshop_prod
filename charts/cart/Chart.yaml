@@ -1,0 +1,16 @@
+apiVersion: v2
+name: cart
+description: Roboshop cart API (Node.js) - shopping cart state in Redis
+type: application
+version: 1.0.0
+appVersion: "2.0.1"
+keywords: [roboshop, cart]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: application
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"

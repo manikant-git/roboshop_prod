@@ -1,0 +1,16 @@
+# rabbitmq - qa overrides. Only values that differ from values.yaml.
+environment: qa
+namespace: roboshop-qa
+
+image:
+  tag: "3-management-alpine"
+
+persistence:
+  storageClass: gp3
+  size: 5Gi
+
+nodeSelector: {}
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+  roboshop.io/environment: "qa"

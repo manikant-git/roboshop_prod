@@ -1,0 +1,162 @@
+# ---------------------------------------------------------------------------
+# catalogue - Roboshop catalogue API (Node.js) - product catalogue backed by MongoDB
+# ---------------------------------------------------------------------------
+enabled: true
+nameOverride: ""
+fullnameOverride: "catalogue"   # keep the pre-Helm DNS name stable
+useReleaseNamePrefix: false
+namespace: roboshop
+environment: base
+component: microservice
+workloadKind: Deployment
+
+image:
+  registry: ""
+  repository: devopman/catalogue
+  tag: "2.0.1"
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 2
+revisionHistoryLimit: 5
+rollingUpdate:
+  maxUnavailable: 0
+  maxSurge: 1
+terminationGracePeriodSeconds: 30
+
+serviceAccount:
+  create: false          # provided by the platform chart
+  name: roboshop
+  automount: false
+  annotations: {}
+
+# Security posture is fixed by the common library (non-root, no privilege
+# escalation, all capabilities dropped, RuntimeDefault seccomp). Only the
+# image-specific UID/GID are configurable.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+
+containerPorts:
+  - name: http
+    containerPort: 8080
+
+# Plain environment variables (service specific application config).
+env: {}
+
+# Bulk import of the shared platform ConfigMap / Secret.
+envFrom: []
+
+# Individual keys pulled from the shared platform ConfigMap.
+envFromConfigMapKeys:
+  - name: MONGO_URL
+    configMap: roboshop-config
+    key: MONGO_URL_CATALOGUE
+  - name: NODE_ENV
+    configMap: roboshop-config
+    key: NODE_ENV
+
+# Individual keys pulled from the platform-managed Secret. The Secret itself
+# is produced by External Secrets / CSI from AWS Secrets Manager - never Git.
+envFromSecretKeys: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: "500m"
+    memory: 512Mi
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: http
+  failureThreshold: 30
+  periodSeconds: 2
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 3
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  periodSeconds: 20
+  timeoutSeconds: 3
+
+volumes:
+  - name: tmp
+    emptyDir: {}
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+persistence:
+  enabled: false
+
+service:
+  enabled: true
+  type: ClusterIP
+  headless: false
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  annotations: {}
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: null
+  behavior: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Per-service NetworkPolicy. Baseline namespace policies live in the
+# platform chart; enable this only for service specific rules.
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+configMap:
+  enabled: false
+  name: ""
+  data: {}
+  files: {}
+
+externalSecret:
+  enabled: false
+secretsStoreCSI:
+  enabled: false
+ingress:
+  enabled: false          # the shared ALB Ingress lives in the platform chart
+
+topologySpreadConstraints:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+podLabels: {}
+podAnnotations: {}
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "1"
+extraLabels: {}
+

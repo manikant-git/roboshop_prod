@@ -1,0 +1,35 @@
+# App-of-apps: bootstraps the production environment. Apply this ONE manifest and
+# ArgoCD renders every Roboshop Application from argocd/applicationsets.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: roboshop-production-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: roboshop
+  source:
+    repoURL: https://github.com/<org>/roboshop-helm.git
+    targetRevision: HEAD
+    path: argocd/applicationsets
+    directory:
+      recurse: false
+      include: 'roboshop-production.yaml'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - ApplyOutOfSyncOnly=true
+      retry:
+        limit: 5
+        backoff:
+          duration: 10s
+          factor: 2
+          maxDuration: 5m

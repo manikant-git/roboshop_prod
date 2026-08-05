@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------
+# dev environment - values shared by EVERY Roboshop chart.
+# Applied first, then the chart's own values-dev.yaml.
+#   helm upgrade --install <svc> charts/<svc> \
+#     -f environments/dev/global-values.yaml \
+#     -f charts/<svc>/values-dev.yaml
+# ---------------------------------------------------------------------------
+environment: dev
+namespace: roboshop-dev
+
+image:
+  registry: ""          # set to <acct>.dkr.ecr.<region>.amazonaws.com for ECR
+
+commonAnnotations:
+  roboshop.io/environment: "dev"
+  roboshop.io/managed-by: "platform-engineering"
+
+extraLabels:
+  roboshop.io/environment: dev

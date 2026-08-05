@@ -1,0 +1,29 @@
+# frontend - staging overrides. Only values that differ from values.yaml.
+environment: staging
+namespace: roboshop-staging
+
+replicaCount: 2
+image:
+  tag: "2.0.3"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+topologySpreadConstraints:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+nodeSelector: {}
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "2"
+  roboshop.io/environment: "staging"

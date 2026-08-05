@@ -1,0 +1,16 @@
+apiVersion: v2
+name: redis
+description: Roboshop Redis - cart session and cache store
+type: application
+version: 1.0.0
+appVersion: "7.4-alpine"
+keywords: [roboshop, redis]
+maintainers:
+  - name: Platform Engineering
+    email: platform@roboshop.internal
+annotations:
+  roboshop.io/tier: data
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: "file://../common"
