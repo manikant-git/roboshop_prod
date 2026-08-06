@@ -6,8 +6,7 @@ namespaceResource:
   create: true
   labels:
     name: roboshop
-    roboshop.io/environment: production
-
+    
 resourceQuota:
   enabled: true
   hard:
