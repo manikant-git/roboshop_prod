@@ -15,5 +15,4 @@ commonAnnotations:
   roboshop.io/environment: "qa"
   roboshop.io/managed-by: "platform-engineering"
 
-extraLabels:
-  roboshop.io/environment: qa
+
