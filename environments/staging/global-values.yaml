@@ -15,5 +15,3 @@ commonAnnotations:
   roboshop.io/environment: "staging"
   roboshop.io/managed-by: "platform-engineering"
 
-extraLabels:
-  roboshop.io/environment: staging
