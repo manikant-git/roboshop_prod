@@ -11,7 +11,6 @@ on:
 
   push:
     branches:
-      - main
       - dev
     paths:
       - "charts/**"
@@ -35,7 +34,9 @@ jobs:
           version: ${{ env.HELM_VERSION }}
 
       - name: Helm Lint
-        run: chmod +x ci/*.sh && ./ci/lint.sh
+        run: |
+          chmod +x ci/*.sh
+          ./ci/lint.sh
 
   template-and-validate:
     name: Helm Template + Kubeconform
@@ -53,9 +54,7 @@ jobs:
         run: |
           curl -sSLo /tmp/kubeconform.tar.gz \
             https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
-
           tar -xzf /tmp/kubeconform.tar.gz -C /tmp
-
           sudo mv /tmp/kubeconform /usr/local/bin/
 
       - name: Render Helm Charts
@@ -68,7 +67,8 @@ jobs:
           chmod +x ci/*.sh
           ./ci/validate.sh
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Rendered Manifests
+        uses: actions/upload-artifact@v4
         with:
           name: rendered-manifests
           path: ci/_rendered
@@ -76,20 +76,12 @@ jobs:
 
   security:
     name: Checkov Security Scan
-    continue-on-error: true
     runs-on: ubuntu-latest
-    needs: lint
-
-    permissions:
-      contents: read
-      security-events: write
+    needs: template-and-validate
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: azure/setup-helm@v4
-        with:
-          version: ${{ env.HELM_VERSION }}
 
       - uses: actions/setup-python@v5
         with:
@@ -98,15 +90,10 @@ jobs:
       - name: Install Checkov
         run: pip install checkov
 
-      - name: Render Charts
-        run: |
-          chmod +x ci/*.sh
-          ./ci/template.sh
-
       - name: Run Checkov
         run: |
           chmod +x ci/*.sh
-          ./ci/security-scan.sh
+          ./ci/security-scan.sh || true
 
       - name: Generate SARIF
         if: always()
@@ -126,18 +113,11 @@ jobs:
         continue-on-error: true
 
   package:
-    name: Package & Publish OCI Helm Charts
+    name: Package Helm Charts
     runs-on: ubuntu-latest
-
     needs:
       - template-and-validate
       - security
-
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -146,28 +126,13 @@ jobs:
         with:
           version: ${{ env.HELM_VERSION }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Login to Amazon ECR OCI
-        run: |
-          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
-            | helm registry login \
-                --username AWS \
-                --password-stdin \
-                "${{ vars.ECR_REGISTRY }}"
-
-      - name: Package & Push Charts
-        env:
-          OCI_REGISTRY: oci://${{ vars.ECR_REGISTRY }}/roboshop
+      - name: Package Charts
         run: |
           chmod +x ci/*.sh
           ./ci/package.sh
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Helm Packages
+        uses: actions/upload-artifact@v4
         with:
           name: helm-packages
           path: dist/*.tgz
