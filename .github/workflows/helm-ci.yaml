@@ -5,27 +5,27 @@ on:
 
   pull_request:
     paths:
-      - "roboshop-helm/**"
+      - "charts/**"
+      - "ci/**"
+      - "environments/**"
 
   push:
     branches:
       - main
       - dev
     paths:
-      - "roboshop-helm/**"
+      - "charts/**"
+      - "ci/**"
+      - "environments/**"
 
 env:
   HELM_VERSION: v3.16.3
   KUBE_VERSION: "1.30.0"
-  WORKDIR: roboshop-helm
 
 jobs:
   lint:
     name: Helm Lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKDIR }}
 
     steps:
       - uses: actions/checkout@v4
@@ -34,17 +34,13 @@ jobs:
         with:
           version: ${{ env.HELM_VERSION }}
 
-      - name: Helm Lint (Strict)
-        run: ./ci/lint.sh
+      - name: Helm Lint
+        run: chmod +x ci/*.sh && ./ci/lint.sh
 
   template-and-validate:
     name: Helm Template + Kubeconform
     runs-on: ubuntu-latest
     needs: lint
-
-    defaults:
-      run:
-        working-directory: ${{ env.WORKDIR }}
 
     steps:
       - uses: actions/checkout@v4
@@ -57,20 +53,25 @@ jobs:
         run: |
           curl -sSLo /tmp/kubeconform.tar.gz \
             https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+
           tar -xzf /tmp/kubeconform.tar.gz -C /tmp
+
           sudo mv /tmp/kubeconform /usr/local/bin/
 
-      - name: Render Charts
-        run: ./ci/template.sh
+      - name: Render Helm Charts
+        run: |
+          chmod +x ci/*.sh
+          ./ci/template.sh
 
-      - name: Validate Kubernetes Manifests
-        run: ./ci/validate.sh
+      - name: Validate Manifests
+        run: |
+          chmod +x ci/*.sh
+          ./ci/validate.sh
 
-      - name: Upload Rendered Manifests
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: rendered-manifests
-          path: ${{ env.WORKDIR }}/ci/_rendered
+          path: ci/_rendered
           retention-days: 7
 
   security:
@@ -81,10 +82,6 @@ jobs:
     permissions:
       contents: read
       security-events: write
-
-    defaults:
-      run:
-        working-directory: ${{ env.WORKDIR }}
 
     steps:
       - uses: actions/checkout@v4
@@ -101,12 +98,16 @@ jobs:
         run: pip install checkov
 
       - name: Render Charts
-        run: ./ci/template.sh
+        run: |
+          chmod +x ci/*.sh
+          ./ci/template.sh
 
-      - name: Security Scan
-        run: ./ci/security-scan.sh
+      - name: Run Checkov
+        run: |
+          chmod +x ci/*.sh
+          ./ci/security-scan.sh
 
-      - name: Generate SARIF Report
+      - name: Generate SARIF
         if: always()
         run: |
           checkov \
@@ -120,12 +121,13 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: ${{ env.WORKDIR }}/results.sarif
+          sarif_file: results.sarif
         continue-on-error: true
 
   package:
     name: Package & Publish OCI Helm Charts
     runs-on: ubuntu-latest
+
     needs:
       - template-and-validate
       - security
@@ -136,10 +138,6 @@ jobs:
       contents: read
       id-token: write
 
-    defaults:
-      run:
-        working-directory: ${{ env.WORKDIR }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -147,13 +145,13 @@ jobs:
         with:
           version: ${{ env.HELM_VERSION }}
 
-      - name: Configure AWS Credentials (OIDC)
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Login to Amazon ECR OCI Registry
+      - name: Login to Amazon ECR OCI
         run: |
           aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
             | helm registry login \
@@ -164,10 +162,11 @@ jobs:
       - name: Package & Push Charts
         env:
           OCI_REGISTRY: oci://${{ vars.ECR_REGISTRY }}/roboshop
-        run: ./ci/package.sh
+        run: |
+          chmod +x ci/*.sh
+          ./ci/package.sh
 
-      - name: Upload Helm Packages
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: helm-packages
-          path: ${{ env.WORKDIR }}/dist/*.tgz
+          path: dist/*.tgz
