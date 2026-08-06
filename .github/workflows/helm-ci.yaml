@@ -5,7 +5,9 @@ on:
     paths:
       - "roboshop-helm/**"
   push:
-    branches: [main]
+    branches: 
+       - dev
+       - main
     paths:
       - "roboshop-helm/**"
 
