@@ -15,5 +15,4 @@ commonAnnotations:
   roboshop.io/environment: "production"
   roboshop.io/managed-by: "platform-engineering"
 
-extraLabels:
-  roboshop.io/environment: production
+
